@@ -41,19 +41,19 @@ small{color:var(--dim)}
 .hud>*{pointer-events:auto;position:absolute}
 
 /* season wheel */
-#wheel{top:var(--st);left:var(--sl);width:84px;height:84px;border-radius:50%;display:grid;place-items:center;padding:0}
+#wheel{top:var(--st);left:var(--sl);width:70px;height:70px;border-radius:50%;display:grid;place-items:center;padding:0}
 #ring{position:absolute;inset:6px;border-radius:50%;background:conic-gradient(#6f8fa0 0 102.9deg,#9aab73 102.9deg 231.4deg,#7c4f6e 231.4deg 360deg)}
 #ring::after{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--glass2)}
 #needle{position:absolute;inset:2px;border-radius:50%;pointer-events:none}
 #needle::before{content:"";position:absolute;left:50%;top:0;width:3px;height:14px;margin-left:-1.5px;background:var(--ink);border-radius:2px;box-shadow:0 0 6px rgba(0,0,0,.6)}
 #wtxt{position:relative;text-align:center;line-height:1.05}
-#wy{font:15px var(--fd);display:block}
-#ws{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);display:block}
-#wt{font-size:12px;font-variant-numeric:tabular-nums;display:block}
+#wy{font:13px var(--fd);display:block}
+#ws{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);display:block}
+#wt{font-size:11px;font-variant-numeric:tabular-nums;display:block}
 
 /* bars */
-#bars{top:var(--st);left:50%;transform:translateX(-50%);width:min(420px,36vw);padding:8px 12px;display:grid;gap:6px}
-.bar{display:grid;grid-template-columns:66px 1fr 72px;align-items:center;gap:8px;font-size:12px;width:100%}
+#bars{top:var(--st);left:50%;transform:translateX(-50%);width:min(380px,34vw);padding:6px 10px;display:grid;gap:3px}
+.bar{display:grid;grid-template-columns:58px 1fr 62px;align-items:center;gap:8px;font-size:11px;width:100%;min-height:18px}
 .bar>span:first-child{letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
 .bar .v{text-align:right;font-variant-numeric:tabular-nums}
 .track{position:relative;height:9px;border-radius:5px;background:#0a1012;overflow:hidden;box-shadow:inset 0 0 0 1px #2a3833}
@@ -66,59 +66,63 @@ small{color:var(--dim)}
 .track em.hit{opacity:1;background:#f0d7f2}
 
 /* resources */
-#res{top:var(--st);right:var(--sr);max-width:min(340px,28vw);padding:6px 10px;display:flex;flex-wrap:wrap;gap:3px 12px;justify-content:flex-end}
-.r{display:flex;align-items:baseline;gap:4px;font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#res{top:var(--st);right:var(--sr);max-width:min(330px,28vw);padding:6px 10px;display:flex;flex-wrap:wrap;gap:2px 10px;justify-content:flex-end}
+.r{display:flex;align-items:baseline;gap:3px;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .r i{width:8px;height:8px;border-radius:2px;display:inline-block;transform:translateY(-1px)}
 .r b{font-weight:700}
 .r small{font-size:11px}
 .r.low b{color:var(--blood)}
 
 /* left column */
-#left{top:calc(var(--st) + 96px);left:var(--sl);width:182px;display:grid;gap:8px;max-height:calc(100% - var(--st) - var(--sb) - 190px);overflow:auto}
-.race{display:grid;grid-template-columns:34px 1fr auto;grid-template-rows:auto auto;gap:2px 8px;align-items:center;padding:8px 10px;width:100%;min-height:56px}
-.por{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font:17px var(--fd);background:var(--c);color:#1a1612;grid-row:span 2;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
+#left{top:calc(var(--st) + 80px);left:var(--sl);width:172px;display:grid;gap:6px;max-height:calc(100% - var(--st) - var(--sb) - 170px);overflow:auto}
+.race{display:grid;grid-template-columns:26px 1fr auto;grid-template-rows:auto auto;gap:1px 8px;align-items:center;padding:5px 8px;width:100%;min-height:44px;border-radius:9px}
+#races{padding:3px}
+.race+.race{border-top:1px solid rgba(255,255,255,.06)}
+.por{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:14px var(--fd);background:var(--c);color:#1a1612;grid-row:span 2;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
 .por.sm{width:22px;height:22px;font-size:12px;grid-row:auto}
-.rn{font-weight:700;font-size:14px;line-height:1.1}
-.rn small{display:block;font-weight:400;font-size:11.5px}
-.rv{font:22px var(--fd);font-variant-numeric:tabular-nums;grid-row:span 2;align-self:center}
+.rn{font-weight:700;font-size:13px;line-height:1.1}
+.rn small{display:block;font-weight:400;font-size:11px}
+.rv{font:19px var(--fd);font-variant-numeric:tabular-nums;grid-row:span 2;align-self:center}
 .rv.ok{color:var(--gold)} .rv.bad{color:var(--blood)}
-.rbar{grid-column:2;position:relative;height:5px;border-radius:3px;background:#0a1012}
+.rbar{grid-column:2;position:relative;height:4px;border-radius:2px;background:#0a1012}
 .rbar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--c)}
 .rbar em{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--gold)}
 .race .warnline{grid-column:1/-1;font-size:11.5px;color:var(--blood)}
-#notes{padding:9px 11px;font-size:13px}
-#highBtn{display:grid;gap:1px;padding:9px 12px;width:100%;min-height:52px;text-align:left}
-#highBtn b{font:17px var(--fd);color:var(--gold)}
-#highBtn small{font-size:12px}
+#notes{padding:0;font-size:12.5px}
+#notes>button{width:100%;padding:8px 10px;min-height:40px;display:grid;gap:1px;text-align:left}
+#notes>button span{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ember)}
+#highBtn{display:grid;gap:0;padding:7px 10px;width:100%;min-height:44px;text-align:left}
+#highBtn b{font:15px var(--fd);color:var(--gold)}
+#highBtn small{font-size:11.5px}
 #highBtn.ready{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset,0 0 18px rgba(217,178,91,.35)}
 #notes h4{margin:0;font:14px var(--fd);display:flex;justify-content:space-between;align-items:center;width:100%}
-#notes ol{margin:6px 0 0;padding-left:18px;display:grid;gap:3px;color:var(--dim)}
+#notes ol{margin:0;padding:0 10px 9px 28px;display:grid;gap:3px;color:var(--dim)}
 #notes li.done{color:var(--faint);text-decoration:line-through}
 #notes li.cur{color:var(--ink)}
 
 /* alerts */
-#alerts{top:calc(var(--st) + 84px);right:var(--sr);width:236px;display:grid;gap:6px}
-.al{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;font-size:13px;width:100%;min-height:44px;line-height:1.25}
-.al::before{content:"";flex:none;width:9px;height:9px;border-radius:50%;margin-top:4px;background:var(--frost)}
+#alerts{top:calc(var(--st) + 80px);right:var(--sr);width:214px;display:grid;gap:4px}
+.al{display:flex;gap:7px;align-items:center;padding:6px 9px;font-size:12px;width:100%;min-height:36px;line-height:1.2;border-radius:9px}
+.al::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--frost)}
 .al.bad::before{background:var(--blood);box-shadow:0 0 8px var(--blood)}
 .al.warn::before{background:var(--ember)}
 .al.good::before{background:var(--moss)}
 body.panel-open #alerts{display:none}
 
 /* drawer */
-#drawer{bottom:var(--sb);left:var(--sl);right:calc(var(--sr) + 236px);padding:6px;display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#drawer{bottom:var(--sb);left:var(--sl);right:calc(var(--sr) + 236px);padding:5px;display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 #drawer::-webkit-scrollbar{display:none}
-.bi{flex:none;width:112px;min-height:58px;padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.03);border:1px solid transparent;display:grid;align-content:start;gap:2px}
-.bi b{font-size:13px;line-height:1.15;font-weight:700}
-.bi span{font-size:11.5px;color:var(--dim);line-height:1.2}
+.bi{flex:none;width:104px;min-height:46px;padding:5px 8px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid transparent;display:grid;align-content:start;gap:1px}
+.bi b{font-size:12.5px;line-height:1.15;font-weight:700}
+.bi span{font-size:11px;color:var(--dim);line-height:1.2}
 .bi.poor span{color:#d48a7d}
 .bi.on{border-color:var(--ember);background:rgba(233,162,76,.12)}
 #speed{bottom:var(--sb);right:var(--sr);display:flex;padding:5px;gap:4px}
-#speed button{min-width:44px;height:56px;border-radius:8px;font-weight:700;font-size:14px;display:grid;place-items:center;padding:0 6px}
+#speed button{min-width:44px;height:46px;border-radius:8px;font-weight:700;font-size:14px;display:grid;place-items:center;padding:0 6px}
 #speed button.on{background:var(--ember);color:#22170c}
 
 /* ghost bar */
-#ghostbar{bottom:calc(var(--sb) + 86px);left:50%;transform:translateX(-50%);padding:10px 12px;display:flex;gap:12px;align-items:center;max-width:min(560px,calc(100% - 32px))}
+#ghostbar{bottom:calc(var(--sb) + 72px);left:50%;transform:translateX(-50%);padding:10px 12px;display:flex;gap:12px;align-items:center;max-width:min(560px,calc(100% - 32px))}
 #ghostbar .gt{display:grid;gap:1px;min-width:0}
 #ghostbar .gt b{font:16px var(--fd)}
 #ghostbar .gt small{font-size:12.5px}
@@ -215,8 +219,8 @@ body.panel-open #alerts{display:none}
 .gtbl td:first-child{white-space:nowrap}
 .gtbl td small{display:block;font-size:11.5px;color:var(--faint);font-weight:400}
 /* toasts */
-#toasts{position:absolute;top:calc(var(--st) + 100px);left:50%;transform:translateX(-50%);display:grid;gap:6px;justify-items:center;pointer-events:none;width:min(520px,calc(100% - 32px));z-index:4}
-.toast{padding:8px 14px;font-size:14px;text-align:center;animation:tin .25s ease-out}
+#toasts{position:absolute;top:calc(var(--st) + 76px);left:50%;transform:translateX(-50%);display:grid;gap:4px;justify-items:center;pointer-events:none;width:min(440px,calc(100% - 32px));z-index:4}
+.toast{padding:5px 12px;font-size:12.5px;text-align:center;animation:tin .25s ease-out;border-radius:9px}
 .toast.bad{border-color:#7a3a33}
 .toast.good{border-color:#4e6b45}
 @keyframes tin{from{opacity:0;transform:translateY(-6px)}}
@@ -254,7 +258,7 @@ body.panel-open #alerts{display:none}
       <button class="bar" data-act="ire"><span>Ire</span><span class="track" id="ireT"><i id="ireF"></i></span><span class="v" id="ireV">0</span></button>
     </div>
     <button id="res" class="glass" data-act="store" aria-label="Storehouse"></button>
-    <div id="left"><button id="highBtn" class="glass" data-act="high"></button><div id="races" style="display:grid;gap:8px"></div><div id="notes" class="glass"></div></div>
+    <div id="left"><button id="highBtn" class="glass" data-act="high"></button><div id="races" class="glass" style="display:grid"></div><div id="notes" class="glass"></div></div>
     <div id="alerts"></div>
     <div id="drawer" class="glass" aria-label="Build"></div>
     <div id="speed" class="glass"></div>
@@ -394,7 +398,7 @@ const mmss=s=>{s=Math.max(0,s);return Math.floor(s/60)+':'+String(Math.floor(s%6
 const fmt=v=>(v>0?'+':v<0?'−':'')+(Math.abs(v)%1?Math.abs(v).toFixed(1):Math.abs(v));
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let S=null;
-const ui={speed:1,ghost:null,sel:null,panel:null,touching:false,confirm:null,notesOpen:true,flash:0,lt:6};
+const ui={speed:1,ghost:null,sel:null,panel:null,touching:false,confirm:null,notesOpen:false,flash:0,lt:6};
 const cam={x:MW*TS/2,y:MH*TS/2,z:1};
 const byId=id=>S.buildings.find(b=>b.id===id);
 const bAt=(x,y)=>{const id=S.occ[idx(x,y)];return id<0?null:byId(id)};
@@ -418,7 +422,7 @@ function newGame(seed){
   R.s=seed|0;
   S={seed,t:0,tiles:new Uint8Array(N),old:new Uint8Array(N),fog:new Uint8Array(N),glade:new Int16Array(N).fill(-1),node:new Int16Array(N).fill(-1),occ:new Int32Array(N).fill(-1),road:new Uint8Array(N),claim:new Uint8Array(N),
     nodes:[],glades:[],buildings:[],nid:1,
-    stock:{wood:30,planks:6,stone:0,bricks:0,fibre:0,fabric:4,herbs:0,berries:30,mushrooms:0,roots:20,stew:0,herbalstew:0,porridge:0},
+    stock:{wood:30,planks:6,stone:0,bricks:0,fibre:0,fabric:4,herbs:0,berries:20,mushrooms:0,roots:12,stew:0,herbalstew:0,porridge:0},
     races:RACES.map(()=>({pop:3,acc:0,noFood:0,leave:0,res:0,terms:[],rate:0,homeless:0})),
     hearth:{fuel:BAL.fuelCap,level:1,rite:false},
     renown:0,patience:0,year:1,season:0,st:0,haul:[],trees:0,gladeIre:0,darkIre:0,darkT:0,chill:false,ire:0,ireLvl:0,ireTerms:[],takeT:0,
@@ -624,7 +628,7 @@ function reqGoods(){const o=S.owned,g=['wood','raw'];if(o.includes('workstation'
 const BASEAMT={wood:25,planks:12,stone:20,bricks:10,fabric:10,herbs:15,raw:25,meals:12};
 function newRequest(slot){
   const t=S.reqDone,goods=shuffle(reqGoods()),n=t>=4&&goods.length>2&&rnd()<.5?2:1,need={};
-  for(let k=0;k<n;k++){const g=goods[k];need[g]=Math.round(BASEAMT[g]*(1+0.3*t)*(n===2?.6:1)/5)*5||5}
+  for(let k=0;k<n;k++){const g=goods[k],base=BASEAMT[g]*(1+0.3*t)*(n===2?.6:1);need[g]=Math.max(5,Math.round(Math.max(base,reqHave(g)+base*0.6)/5)*5)}
   const others=S.req.filter(Boolean).map(r=>r.rw.k);const poolLeft=POOL.some(k=>!S.owned.includes(k));
   let opts=['villagers','renown','patience','goods','charter'];if(poolLeft)opts.push('bp','bp','bp');
   if(poolLeft&&!others.includes('bp'))opts=['bp'];
@@ -836,7 +840,7 @@ function recompute(){
   const idl=[0,1,2].reduce((a,r)=>a+Math.max(0,idle(r)),0);
   if(idl>0){const fb=S.buildings.find(b=>b.built&&BD[b.type].wk&&b.workers.length<BD[b.type].wk);A.push({k:'',t:`${idl} idle villager${idl>1?'s':''}.`+(fb?'':' Build a workplace.'),b:fb?fb.id:null})}
   let blocked=0;for(const b of S.buildings){if(blocked>=2)break;if(b.built&&BD[b.type].wk&&b.workers.length&&b.status&&/^(No |Waiting)/.test(b.status)){A.push({k:'',t:BD[b.type].n+': '+b.status.toLowerCase()+'.',b:b.id});blocked++}}
-  S.alerts=A.slice(0,6);
+  S.alerts=A.slice(0,4);
 }
 function checkEnd(){
   if(S.over)return;
@@ -1182,7 +1186,7 @@ function tap(sx,sy){
 
 /* ================= UI ================= */
 function setHTML(el,h){if(el._h!==h){const sl=el.scrollLeft,st=el.scrollTop;el._h=h;el.innerHTML=h;el.scrollLeft=sl;el.scrollTop=st}}
-function toast(msg,k){const box=$('#toasts');if(!box)return;const el=document.createElement('div');el.className='toast glass '+(k||'');el.textContent=msg;box.appendChild(el);while(box.children.length>3)box.firstChild.remove();setTimeout(()=>el.remove(),4800)}
+function toast(msg,k){const box=$('#toasts');if(!box)return;const el=document.createElement('div');el.className='toast glass '+(k||'');el.textContent=msg;box.appendChild(el);while(box.children.length>2)box.firstChild.remove();setTimeout(()=>el.remove(),3600)}
 function enterGhost(type){
   closePanel();
   if(type==='road'){ui.ghost={type};ghostBar();return}
@@ -1355,10 +1359,10 @@ function hud(force){
   setHTML($('#res'),res.map(([g,v,l])=>`<span class="r"><i style="background:${GC[g]}"></i><b>${Math.floor(v)}</b><small>${l}</small></span>`).join('')+`<span class="r ${fs<90?'low':''}"><i style="background:var(--ember);border-radius:50%"></i><b>${mmss(fs)}</b><small>fuel</small></span>`);
   {const ready=S.req.filter(canSend).length;const hb=$('#highBtn');hb.classList.toggle('ready',ready>0);setHTML(hb,`<b>Highhold</b><small>${ready?ready+' request'+(ready>1?'s':'')+' ready to send':S.req.filter(Boolean).length+' requests open'}</small>`)}
   setHTML($('#races'),S.races.map((rc,r)=>{const RR=RACES[r],cls=rc.res>=BAL.thr?'ok':rc.res<=3?'bad':'';
-    return`<button class="race glass" data-act="race:${r}" style="--c:${RR.c}"><span class="por">${RR.n[0]}</span><span class="rn">${RR.n}<small>${rc.pop} · ${Math.max(0,idle(r))} idle</small></span><span class="rv ${cls}">${Math.round(rc.res)}</span><span class="rbar"><i style="width:${Math.max(0,Math.min(100,rc.res/24*100))}%"></i><em style="left:${BAL.thr/24*100}%"></em></span>${rc.leave>0?`<span class="warnline">Leaving in ${Math.ceil(BAL.leave-rc.leave)} s</span>`:''}</button>`}).join(''));
+    return`<button class="race" data-act="race:${r}" style="--c:${RR.c}"><span class="por">${RR.n[0]}</span><span class="rn">${RR.n}<small>${rc.pop} · ${Math.max(0,idle(r))} idle</small></span><span class="rv ${cls}">${Math.round(rc.res)}</span><span class="rbar"><i style="width:${Math.max(0,Math.min(100,rc.res/24*100))}%"></i><em style="left:${BAL.thr/24*100}%"></em></span>${rc.leave>0?`<span class="warnline">Leaving in ${Math.ceil(BAL.leave-rc.leave)} s</span>`:''}</button>`}).join(''));
   const cur=S.tut.findIndex(v=>!v);
   const notes=$('#notes');notes.hidden=cur<0;
-  if(cur>=0)setHTML(notes,`<h4><span>Clerk’s notes</span><button data-act="notes" style="font-size:12px;color:var(--dim);min-height:32px;padding:0 4px">${ui.notesOpen?'Hide':'Show'}</button></h4>`+(ui.notesOpen?'<ol>'+TUT.map((t,k)=>`<li class="${S.tut[k]?'done':k===cur?'cur':''}">${t}</li>`).join('')+'</ol>':''));
+  if(cur>=0)setHTML(notes,`<button data-act="notes"><span>Next step ${cur+1} of ${TUT.length}</span>${TUT[cur]}</button>`+(ui.notesOpen?'<ol>'+TUT.map((t,k)=>`<li class="${S.tut[k]?'done':k===cur?'cur':''}">${t}</li>`).join('')+'</ol>':''));
   setHTML($('#alerts'),S.alerts.map((a,k)=>`<button class="al glass ${a.k}" data-act="alert:${k}">${esc(a.t)}</button>`).join(''));
   setHTML($('#drawer'),(S.queue.length&&!ui.pick?`<button class="bi pk" data-act="pick"><b>${S.queue[0].k==='bp'?'Blueprint':'Charter'} waiting</b><span>Tap to choose</span></button>`:'')+DRAWER.filter(k=>S.owned.includes(k)).map(k=>{const d=BD[k],ok=afford(d.cost);return`<button class="bi ${ok?'':'poor'} ${S.fresh.includes(k)?'new':''} ${ui.ghost&&ui.ghost.type===k?'on':''}" data-act="build:${k}"><b>${d.n}</b><span>${costStr(d.cost)}</span></button>`}).join(''));
   const sp=`<button class="${ui.speed===0?'on':''}" data-act="speed:0" aria-label="Pause">❚❚</button>`+[1,2,3].map(v=>`<button class="${ui.speed===v?'on':''}" data-act="speed:${v}">${v}×</button>`).join('')+`<button data-act="menu" aria-label="Menu">☰</button>`;
@@ -1455,7 +1459,7 @@ window.__lr={get S(){return S},ui,tick,newGame,startNew,act,recompute,canPlace,p
 <div id="updBar" class="glass" hidden style="position:fixed;z-index:20;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;gap:12px;align-items:center;padding:10px 12px 10px 16px;max-width:calc(100% - 32px)"><span>A new version of The Long Rain is ready.</span><button class="btn main" onclick="try{window.__lr&&window.__lr.S&&window.__lr.save&&window.__lr.save()}catch(e){};location.reload()">Update now</button></div>
 <div id="installHint" class="ov" hidden><div class="card glass"><h1 style="font-size:34px">Install on your iPad</h1><p class="lede">Tap the Share button in Safari, then <b>Add to Home Screen</b>. The Long Rain then opens full screen and works offline.</p><div class="row"><button class="btn main" id="hintOk">Got it</button></div></div></div>
 <script>
-const LR_VERSION='M1.10';
+const LR_VERSION='M1.11';
 if('serviceWorker' in navigator){addEventListener('load',()=>{
   navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{
     const check=()=>r.update().catch(()=>{});check();

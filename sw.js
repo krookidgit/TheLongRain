@@ -1,4 +1,4 @@
-const V='longrain-m1-10';
+const V='longrain-m1-11';
 const CORE=['./','index.html','manifest.webmanifest','icons/icon-180.png','icons/icon-192.png','icons/icon-512.png','assets/terrain-grass-dry-1.png','assets/terrain-grass-dry-2.png','assets/terrain-grass-dry-3.png','assets/building-woodcutter.png','assets/building-woodcutter-dark.png','assets/decal-yard-mud.png','assets/villager-human-walk.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(CORE.map(u=>new Request(u,{cache:'reload'})))).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
