@@ -235,7 +235,7 @@ body.panel-open #alerts{display:none}
 const $=s=>document.querySelector(s);
 
 /* ================= constants ================= */
-const MW=48,MH=48,TS=32,N=MW*MH,TICK=0.1,YEAR=420,WIN=12;
+const MW=80,MH=80,TS=32,N=MW*MH,TICK=0.1,YEAR=420,WIN=12;
 const SEASONS=[
  {n:'Mistfall',len:120,d:'Steady rain. A good season to build and explore.'},
  {n:'Clearing',len:150,d:'Light showers. New settlers arrive as it begins.'},
@@ -260,7 +260,7 @@ const RC={
 const STAR_OUT=[0,1,1.5,2];
 const BD={
  hearth:{n:'Great Hearth',w:3,h:3,cost:{},art:'hearth',desc:'The ember of the Undying Hearth. It refills itself from stored wood. If it stays dark for a full season, the settlement is lost.'},
- woodcutter:{n:"Woodcutters' Camp",w:2,h:2,cost:{wood:10},wk:3,kind:'cut',range:6,art:'camp',roof:'#7d6040',pile:'logs',desc:'Fells the nearest trees at the forest edge within 6 tiles. The only way into the Wyldwood. Each camp adds 1 Ire, and every tree felled adds a little more.'},
+ woodcutter:{n:"Woodcutters' Camp",w:2,h:2,cost:{wood:10},wk:3,kind:'cut',range:8,art:'camp',roof:'#7d6040',pile:'logs',desc:'Fells the nearest trees at the forest edge within 8 tiles. The only way into the Wyldwood. Each camp adds 1 Ire, and every tree felled adds a little more.'},
  forager:{n:"Foragers' Camp",w:2,h:2,cost:{wood:10},wk:2,kind:'gather',range:6,nodes:['berries','mushrooms','roots','herbs'],fav:'elves',art:'camp',roof:'#84505a',pile:'basket',desc:'Gathers berries, mushrooms, roots and herbs from nodes within 6 tiles, taking whatever the Storehouse holds least of.'},
  hovel:{n:'Hovel',w:1,h:2,cost:{wood:5},beds:2,race:null,art:'house',wall:'#7b6c56',roof:'#5d5444',desc:'A leaky roof for 2 villagers of any race. Better than the rain.'},
  road:{n:'Road',w:1,h:1,cost:{wood:1},desc:'Buildings beside a road that reaches a Storehouse haul faster. Without one they work at 75% speed.'},
@@ -323,20 +323,20 @@ function newGame(seed){
     renown:0,patience:0,year:1,season:0,st:0,haul:[],trees:0,gladeIre:0,darkIre:0,darkT:0,chill:false,ire:0,ireLvl:0,ireTerms:[],takeT:0,
     stats:{trees:0,glades:0,meals:0,arrived:0,left:0,taken:0},tut:[0,0,0,0,0,0],alerts:[],over:null};
   genMap();
-  addB('hearth',23,23,true);
-  addB('store',19,23,true);
-  reveal(24.5,24.5,6.6);
+  addB('hearth',39,39,true);
+  addB('store',35,39,true);
+  reveal(40.5,40.5,8.6);
 }
 function addNode(t,x,y,c){const id=S.nodes.length;S.nodes.push({id,t,x,y,c,max:c});S.node[idx(x,y)]=id}
 function genMap(){
-  const cx=24.5,cy=24.5;
+  const cx=40.5,cy=40.5;
   for(let i=0;i<N;i++){S.tiles[i]=0;S.old[i]=rnd()<0.14?1:0}
-  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++)if(Math.hypot(x+.5-cx,y+.5-cy)<=5.3){const i=idx(x,y);S.tiles[i]=1;S.old[i]=0}
+  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++)if(Math.hypot(x+.5-cx,y+.5-cy)<=7.3){const i=idx(x,y);S.tiles[i]=1;S.old[i]=0}
   let tries=0;
-  while(S.glades.length<13&&tries<900){tries++;
-    const a=rnd()*Math.PI*2,d=S.glades.length<3?8.5+rnd()*2.5:9+rnd()*14,gx=Math.round(cx+Math.cos(a)*d),gy=Math.round(cy+Math.sin(a)*d);
+  while(S.glades.length<30&&tries<3000){tries++;
+    const a=rnd()*Math.PI*2,d=S.glades.length<4?11.5+rnd()*3:12+rnd()*27,gx=Math.round(cx+Math.cos(a)*d),gy=Math.round(cy+Math.sin(a)*d);
     if(gx<4||gy<4||gx>MW-5||gy>MH-5)continue;
-    const size=ri(7,15),set=new Set([idx(gx,gy)]),arr=[idx(gx,gy)];let g=0;
+    const size=S.glades.length<4?ri(10,16):ri(10,28),set=new Set([idx(gx,gy)]),arr=[idx(gx,gy)];let g=0;
     while(arr.length<size&&g<300){g++;const t=arr[Math.floor(rnd()*arr.length)];const dir=[[1,0],[-1,0],[0,1],[0,-1]][ri(0,3)];const nx=t%MW+dir[0],ny=((t/MW)|0)+dir[1];if(nx<3||ny<3||nx>MW-4||ny>MH-4)continue;const ni=idx(nx,ny);if(!set.has(ni)){set.add(ni);arr.push(ni)}}
     let ok=true;
     outer:for(const t of arr){const x=t%MW,y=(t/MW)|0;for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){const xx=x+dx,yy=y+dy;if(!inB(xx,yy))continue;const j=idx(xx,yy);if(S.tiles[j]!==0&&!set.has(j)){ok=false;break outer}}}
@@ -349,13 +349,13 @@ function genMap(){
   const pool=['berries','mushrooms','roots','herbs','stone','fibre','berries','roots'];
   const order=[...S.glades].sort((a,b)=>Math.hypot(a.cx-cx,a.cy-cy)-Math.hypot(b.cx-cx,b.cy-cy));
   order.forEach((gl,k)=>{
-    const count=gl.t.length>=11?2:1;
+    const count=gl.t.length>=20?3:gl.t.length>=12?2:1;
     for(let c=0;c<count;c++){const type=c===0&&k<must.length?must[k]:pool[ri(0,pool.length-1)];
       const free=gl.t.filter(t=>S.node[t]<0);if(!free.length)break;const t=free[ri(0,free.length-1)];addNode(type,t%MW,(t/MW)|0,ri(70,140))}
     if(rnd()<0.3){const free=gl.t.filter(t=>S.node[t]<0);for(let w=0;w<ri(1,2)&&free.length>3;w++){const t=free.splice(ri(0,free.length-1),1)[0];S.tiles[t]=2}}
     if(rnd()<0.42)gl.cache=CACHES[ri(0,CACHES.length-1)];
   });
-  addNode('berries',27,27,130);addNode('roots',21,27,130);addNode('mushrooms',28,21,90);addNode('herbs',24,20,70);
+  addNode('berries',44,44,130);addNode('roots',36,45,130);addNode('mushrooms',45,36,90);addNode('herbs',40,34,70);addNode('berries',35,35,80);
 }
 
 /* ================= fog ================= */
@@ -634,7 +634,7 @@ function checkEnd(){
 }
 
 /* ================= save ================= */
-const SKEY='longrain.m1.save',TA={tiles:Uint8Array,old:Uint8Array,fog:Uint8Array,glade:Int16Array,node:Int16Array,occ:Int32Array,road:Uint8Array,claim:Uint8Array};
+const SKEY='longrain.m1b.save',TA={tiles:Uint8Array,old:Uint8Array,fog:Uint8Array,glade:Int16Array,node:Int16Array,occ:Int32Array,road:Uint8Array,claim:Uint8Array};
 function save(){if(!S||S.over)return;try{const o={...S};delete o.connRoad;for(const k in TA)o[k]=Array.from(S[k]);localStorage.setItem(SKEY,JSON.stringify({v:1,s:o,r:R.s,cam:{x:cam.x,y:cam.y,z:cam.z}}))}catch(e){}}
 function load(){try{const raw=localStorage.getItem(SKEY);if(!raw)return false;const d=JSON.parse(raw);const o=d.s;for(const k in TA)o[k]=TA[k].from(o[k]);S=o;R.s=d.r;if(d.cam)Object.assign(cam,d.cam);return true}catch(e){return false}}
 const hasSave=()=>{try{return!!localStorage.getItem(SKEY)}catch(e){return false}};
@@ -653,7 +653,7 @@ loadArt();
 /* ================= terrain cache ================= */
 const cv=$('#world'),ctx=cv.getContext('2d');
 let DPR=1,VW=innerWidth,VH=innerHeight;
-const CS=2,CH=8,NC=MW/CH,tc=document.createElement('canvas');tc.width=MW*TS*CS;tc.height=MH*TS*CS;const tx=tc.getContext('2d');
+const CS=1.5,CH=8,NC=MW/CH,tc=document.createElement('canvas');tc.width=MW*TS*CS;tc.height=MH*TS*CS;const tx=tc.getContext('2d');
 const dirty=new Set();
 function dirtyT(x,y){for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const xx=x+dx,yy=y+dy;if(inB(xx,yy))dirty.add(((yy/CH)|0)*NC+((xx/CH)|0))}}
 function dirtyAll(){for(let c=0;c<NC*NC;c++)dirty.add(c)}
@@ -835,7 +835,7 @@ const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ================= camera & input ================= */
 function resize(){DPR=Math.min(2,window.devicePixelRatio||1);VW=innerWidth;VH=innerHeight;cv.width=Math.round(VW*DPR);cv.height=Math.round(VH*DPR)}
-const clampZ=z=>Math.max(0.42,Math.min(2.4,z));
+const clampZ=z=>Math.max(0.28,Math.min(2.4,z));
 function clampCam(){cam.x=Math.max(0,Math.min(MW*TS,cam.x));cam.y=Math.max(0,Math.min(MH*TS,cam.y))}
 const s2w=(sx,sy)=>({x:cam.x+(sx-VW/2)/cam.z,y:cam.y+(sy-VH/2)/cam.z});
 const s2t=(sx,sy)=>{const w=s2w(sx,sy);return{x:Math.floor(w.x/TS),y:Math.floor(w.y/TS)}};
@@ -896,8 +896,9 @@ function placeGhost(){
 function ghostBar(){
   const el=$('#ghostbar'),g=ui.ghost;el.hidden=!g;if(!g)return;const d=BD[g.type];
   if(g.type==='road'){setHTML(el,`<div class="gt"><b>Paint roads</b><small>Drag along cleared ground, 1 wood a tile. Two fingers to pan.</small></div><button class="btn main" data-act="gno">Done</button>`);return}
-  const why=canPlace(g.type,g.x,g.y);
-  setHTML(el,`<div class="gt"><b>${d.n}</b><small class="${why?'bad':''}">${why?esc(why):'Cost: '+costStr(d.cost)+'. Tap or drag to move.'}</small></div><button class="btn" data-act="gno">Cancel</button><button class="btn main" data-act="gok" ${why?'disabled':''}>Build</button>`);
+  const why=canPlace(g.type,g.x,g.y);let soft='';
+  if(!why&&d.kind==='cut'&&findTree({type:g.type,x:g.x,y:g.y,w:d.w,h:d.h})<0)soft='No forest edge within 8 tiles. Move it closer to the trees.';
+  setHTML(el,`<div class="gt"><b>${d.n}</b><small class="${why||soft?'bad':''}">${why?esc(why):soft||'Cost: '+costStr(d.cost)+'. Tap or drag to move.'}</small></div><button class="btn" data-act="gno">Cancel</button><button class="btn main" data-act="gok" ${why?'disabled':''}>Build</button>`);
 }
 function openPanel(k,id){ui.panel={k,id};ui.sel=k==='b'?id:null;ui.confirm=null;$('#panel').hidden=false;document.body.classList.add('panel-open');renderPanel(true)}
 function closePanel(){ui.panel=null;ui.sel=null;ui.confirm=null;const p=$('#panel');if(p){p.hidden=true;p._h=''}document.body.classList.remove('panel-open')}
@@ -1053,7 +1054,7 @@ document.addEventListener('keydown',e=>{if(!S||e.target.tagName==='INPUT')return
 /* ================= flow ================= */
 function startNew(){
   const v=($('#seedIn').value||'').replace(/\D/g,'');const seed=v?parseInt(v,10)%1e9:Math.floor(Math.random()*1e9);
-  newGame(seed);cam.x=24.5*TS;cam.y=24.5*TS;cam.z=VW<900?0.85:1.05;startGame();
+  newGame(seed);cam.x=40.5*TS;cam.y=40.5*TS;cam.z=VW<900?0.85:1.05;startGame();
   toast("Year 1, Mistfall. Build a Woodcutters' Camp at the forest edge, then Hovels for your folk.");
 }
 let wake=null;
