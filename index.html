@@ -199,6 +199,12 @@ body.panel-open #alerts{display:none}
 .gch i{width:9px;height:9px;border-radius:2px;display:inline-block}
 .gch em{font-style:normal;font-weight:700;font-variant-numeric:tabular-nums}
 .gch.miss{border-color:#7a3a33;color:#eba293}.gch.miss em{color:#eba293}
+.gch.pickable{cursor:pointer;min-height:34px}
+.gch.sel{border-color:var(--gold);background:rgba(217,178,91,.2);box-shadow:0 0 0 1px var(--gold) inset}
+.gch.dim{opacity:.4}
+.rechead{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:36px;gap:8px}
+.rechead .use{font-size:12px;color:var(--dim);border:1px solid var(--line2);border-radius:12px;padding:2px 9px}
+.rec.on .rechead .use{color:var(--ember);border-color:var(--ember)}
 .gch.out{border-color:var(--ember);background:rgba(233,162,76,.12)}
 .alt{display:inline-flex;align-items:center;gap:3px;padding:2px;border-radius:16px;border:1px dashed var(--line2)}
 .alt>span.o{font-size:11px;color:var(--faint);padding:0 1px}
@@ -307,11 +313,12 @@ const STAR_OUT=[0,1,1.5,2];
 const BD={
  hearth:{n:'Great Hearth',w:3,h:3,cost:{},art:'hearth',desc:'The ember of the Undying Hearth. It refills itself from stored wood. If it stays dark for a full season, the settlement is lost.'},
  woodcutter:{n:"Woodcutters' Camp",w:2,h:2,cost:{wood:12},wk:3,kind:'cut',range:8,art:'camp',roof:'#7d6040',pile:'logs',desc:'Fells the nearest trees at the forest edge within 8 tiles. The only way into the Wyldwood. Each camp adds 1 Ire, and every tree felled adds a little more.'},
- forager:{n:"Foragers' Camp",w:2,h:2,cost:{wood:12,planks:2},wk:2,kind:'gather',range:6,nodes:['berries','mushrooms','roots','herbs'],fav:'elves',art:'camp',roof:'#84505a',pile:'basket',desc:'Gathers berries, mushrooms, roots and herbs from nodes within 6 tiles, taking whatever the Storehouse holds least of.'},
+ forager:{n:"Foragers' Camp",w:2,h:2,cost:{wood:12,planks:2},wk:2,kind:'gather',range:6,nodes:['berries','roots'],fav:'elves',art:'camp',roof:'#84505a',pile:'basket',desc:'Gathers berries and roots from nodes within 6 tiles, taking whatever the Storehouse holds least of.'},
  hovel:{n:'Hovel',w:1,h:2,cost:{wood:8},beds:2,race:null,art:'house',wall:'#7b6c56',roof:'#5d5444',desc:'A leaky roof for 2 villagers of any race. Better than the rain.'},
  road:{n:'Road',w:1,h:1,cost:{wood:1},desc:'Buildings beside a road that reaches a Storehouse haul faster. Without one they work at 75% speed.'},
  workstation:{n:'Crude Workstation',w:2,h:2,cost:{wood:20},wk:2,kind:'make',recipes:['planks','bricks','fabric'],fav:'dwarves',art:'shop',wall:'#7d6a52',roof:'#6a5340',desc:'A rough bench for planks, bricks and fabric. Slow, but it needs no blueprint.'},
  kitchen:{n:'Field Kitchen',w:2,h:2,cost:{wood:15,planks:5},wk:2,kind:'make',recipes:['stew','herbalstew','porridge'],fav:'humans',art:'shop',wall:'#86735a',roof:'#8c5a3a',desc:'Cooks stew, herbal stew and porridge. Each food a race likes adds 2 resolve while any is in stock.'},
+ herbalist:{n:"Herbalists' Camp",w:2,h:2,cost:{wood:12,planks:4},wk:2,kind:'gather',range:6,nodes:['herbs','mushrooms'],fav:'elves',art:'camp',roof:'#5d7a4a',pile:'basket',desc:'Gathers herbs and mushrooms within 6 tiles. Opens stew and herbal stew.'},
  stonecutter:{n:"Stonecutters' Camp",w:2,h:2,cost:{wood:10,planks:4},wk:2,kind:'gather',range:6,nodes:['stone'],fav:'dwarves',art:'camp',roof:'#6e7275',pile:'stone',desc:'Quarries stone outcrops within 6 tiles. Dwarves need stone for their halls, and bricks start here.'},
  harvester:{n:"Harvesters' Camp",w:2,h:2,cost:{wood:10,planks:4},wk:2,kind:'gather',range:6,nodes:['fibre'],fav:'elves',art:'camp',roof:'#8a8253',pile:'reeds',desc:'Cuts reed beds for plant fibre within 6 tiles. Fibre becomes fabric at the Crude Workstation.'},
  cottage:{n:'Human Cottage',w:2,h:2,cost:{planks:15},beds:4,race:0,art:'house',wall:'#a28f70',roof:'#8f5b3b',desc:'Proper housing for 4 Humans. Race housing adds up to 2 resolve.'},
@@ -321,12 +328,15 @@ const BD={
  lookout:{n:'Lookout Tower',w:1,h:1,cost:{planks:10},reveal:6,art:'tower',desc:'Reveals the land within 6 tiles. Unopened glades stay hidden until you cut into them.'},
  store:{n:'Storehouse',w:3,h:3,cost:{planks:20},art:'store',desc:'Holds every good. Haulers carry new goods to the nearest Storehouse, so a second one speeds up distant camps.'}};
 BD.site={n:'Glade event',w:1,h:1,cost:{},wk:2,kind:'event',art:'site',desc:''};
-const DRAWER=['woodcutter','forager','hovel','road','workstation','kitchen','stonecutter','harvester','cottage','hall','bower','smallhearth','lookout','store'];
+const DRAWER=['woodcutter','forager','hovel','road','workstation','kitchen','herbalist','stonecutter','harvester','cottage','hall','bower','smallhearth','lookout','store'];
 const REPEAT={hovel:1,road:1};
 const HUP={2:{planks:20,bricks:10},3:{planks:20,bricks:30,fabric:15}};
 const CACHES=[{planks:15},{wood:30},{fabric:10},{bricks:10},{porridge:12},{stew:12},{stone:20},{planks:10,bricks:6}];
-const STARTER=['woodcutter','forager','hovel','road','workstation','kitchen','store'];
-const POOL=['stonecutter','harvester','cottage','hall','bower','smallhearth','lookout'];
+const STARTER=['woodcutter','forager','hovel','road'];
+const TIERS=[['workstation','kitchen','lookout'],['herbalist','stonecutter','harvester','cottage','store'],['hall','bower','smallhearth']];
+const POOL=TIERS.flat();
+function bpOffer(){const picked=S.owned.length-STARTER.length,cap=picked<2?0:picked<5?1:2;let left=[];for(let t=0;t<=cap;t++)left=left.concat(TIERS[t].filter(k=>!S.owned.includes(k)));
+  if(left.length<3)for(let t=cap+1;t<TIERS.length&&left.length<3;t++)left=left.concat(TIERS[t].filter(k=>!S.owned.includes(k)).slice(0,3-left.length));return shuffle(left).slice(0,3)}
 const CHR={
  emberTithe:{n:'Ember Tithe',r:'common',d:'The hearth burns 25% slower.',down:'The Crown grows impatient 0.25 a year faster.'},
  thickBark:{n:'Thick Bark',r:'common',d:'Every tree felled gives 2 more wood.'},
@@ -412,7 +422,7 @@ function newGame(seed){
     races:RACES.map(()=>({pop:3,acc:0,noFood:0,leave:0,res:0,terms:[],rate:0,homeless:0})),
     hearth:{fuel:BAL.fuelCap,level:1,rite:false},
     renown:0,patience:0,year:1,season:0,st:0,haul:[],trees:0,gladeIre:0,darkIre:0,darkT:0,chill:false,ire:0,ireLvl:0,ireTerms:[],takeT:0,
-    req:[null,null,null],reqWait:[2,20,40],reqDone:0,owned:[...STARTER],fresh:[],queue:[{k:'bp'},{k:'ch'}],charters:[],rp:0,ireAdj:0,pact:0,pactBroken:0,dwarfBonus:0,events:0,
+    req:[null,null,null],reqWait:[2,60,150],reqDone:0,owned:[...STARTER],fresh:[],queue:[{k:'bp'},{k:'ch'}],charters:[],rp:0,ireAdj:0,pact:0,pactBroken:0,dwarfBonus:0,events:0,
     stats:{trees:0,glades:0,meals:0,arrived:0,left:0,taken:0,events:0},tut:[0,0,0,0,0,0],alerts:[],over:null};
   genMap();
   addB('hearth',39,39,true);
@@ -502,7 +512,7 @@ function fillB(b){
 }
 function fillAll(){for(const b of S.buildings)if(b.built)fillB(b)}
 function releaseJob(j){if(!j)return;if(j.tg>=0&&j.kind==='cut')S.claim[j.tg]=0;if(j.load){S.stock[j.load.g]+=j.load.a;j.load=null}if(j.carry&&j.cg){S.stock[j.cg]+=j.carry;j.carry=0}}
-function canPlace(type,x,y){
+function canPlace(type,x,y,mv){
   const d=BD[type];
   for(let yy=y;yy<y+d.h;yy++)for(let xx=x;xx<x+d.w;xx++){
     if(!inB(xx,yy))return 'Off the edge of the map';const i=idx(xx,yy);
@@ -510,10 +520,10 @@ function canPlace(type,x,y){
     if(S.tiles[i]===0)return 'Forest in the way';
     if(S.tiles[i]===2)return 'Water in the way';
     if(S.node[i]>=0)return 'A resource node is in the way';
-    if(S.occ[i]>=0)return 'Another building stands here';
+    if(S.occ[i]>=0&&S.occ[i]!==mv)return 'Another building stands here';
   }
   if(d.needForest){let f=false;perimeter({x,y,w:d.w,h:d.h},(xx,yy)=>{if(inB(xx,yy)&&S.tiles[idx(xx,yy)]===0)f=true});if(!f)return 'Must touch the forest edge'}
-  if(!afford(d.cost))return 'Not enough '+missing(d.cost);
+  if(!mv&&!afford(d.cost))return 'Not enough '+missing(d.cost);
   return '';
 }
 function placeRoad(x,y,say){
@@ -579,9 +589,9 @@ function findNode(b){
   const list=avail[types[0]];list.sort((a,b2)=>Math.hypot(a.x-c.x,a.y-c.y)-Math.hypot(b2.x-c.x,b2.y-c.y));
   return list[0].id;
 }
-function pickInputs(rc){
-  const used={},out=[];
-  for(const slot of rc.in){let best=null,ba=0;for(const g of slot){const a=S.stock[g]-(used[g]||0);if(a>=1&&a>ba){best=g;ba=a}}if(!best)return null;used[best]=(used[best]||0)+1;out.push(best)}
+function pickInputs(rc,b,rk){
+  const used={},out=[],lock=(b&&b.ing&&b.ing[rk])||[];
+  for(let si=0;si<rc.in.length;si++){const slot=lock[si]?[lock[si]]:rc.in[si];let best=null,ba=0;for(const g of slot){const a=S.stock[g]-(used[g]||0);if(a>=1&&a>ba){best=g;ba=a}}if(!best)return null;used[best]=(used[best]||0)+1;out.push(best)}
   return out;
 }
 const has=k=>S.charters.includes(k);
@@ -610,10 +620,10 @@ function cut(i,b,elf){
 }
 /* ---------- Highhold requests ---------- */
 const REQ_NAMES={wood:'Timber for the walls',planks:'Planks for the shipyards',stone:'Stone for the high bastion',bricks:'Bricks for the Ember Gate',fibre:'Fibre for rope',fabric:'Sailcloth for the river barges',herbs:'Herbs for the infirmary',raw:'Provisions for the garrison',meals:'Hot meals for the Council',fuel:'Firewood for the Undying Hearth'};
-function reqGoods(){const g=['wood','planks','raw'];if(S.owned.includes('stonecutter'))g.push('stone','bricks');if(S.owned.includes('harvester'))g.push('fabric');if(S.stock.herbs>0||S.stats.glades>0)g.push('herbs');if(S.stats.meals>0||S.owned.includes('kitchen'))g.push('meals');return g}
-const BASEAMT={wood:40,planks:15,stone:20,bricks:12,fabric:12,herbs:15,raw:35,meals:15};
+function reqGoods(){const o=S.owned,g=['wood','raw'];if(o.includes('workstation'))g.push('planks');if(o.includes('kitchen'))g.push('meals');if(o.includes('herbalist'))g.push('herbs');if(o.includes('stonecutter'))g.push('stone');if(o.includes('stonecutter')&&o.includes('workstation'))g.push('bricks');if(o.includes('harvester')&&o.includes('workstation'))g.push('fabric');return g}
+const BASEAMT={wood:25,planks:12,stone:20,bricks:10,fabric:10,herbs:15,raw:25,meals:12};
 function newRequest(slot){
-  const t=S.reqDone,goods=shuffle(reqGoods()),n=t>=2&&rnd()<.6?2:1,need={};
+  const t=S.reqDone,goods=shuffle(reqGoods()),n=t>=4&&goods.length>2&&rnd()<.5?2:1,need={};
   for(let k=0;k<n;k++){const g=goods[k];need[g]=Math.round(BASEAMT[g]*(1+0.3*t)*(n===2?.6:1)/5)*5||5}
   const others=S.req.filter(Boolean).map(r=>r.rw.k);const poolLeft=POOL.some(k=>!S.owned.includes(k));
   let opts=['villagers','renown','patience','goods','charter'];if(poolLeft)opts.push('bp','bp','bp');
@@ -649,6 +659,7 @@ function pHighhold(){
   h+=`<p class="note">Requests sent: ${S.reqDone}. Each one asks a little more than the last.</p>`;
   return h;
 }
+function setIng(id,rk,si,g){const b=byId(id);if(!b)return;b.ing=b.ing||{};const L=b.ing[rk]=b.ing[rk]||[];L[si]=L[si]===g?null:g;b.jobs=b.jobs.map(j=>j&&j.trip!=null?j:null)}
 function startTrip(b,j,load){j.trip=0;j.tt=tripTime(b);j.load=load}
 function deliver(l){S.stock[l.g]=(S.stock[l.g]||0)+l.a;const st=S.buildings.find(b=>b.type==='store'&&b.built);}
 function work(b,d,dt,temp){
@@ -679,7 +690,7 @@ function work(b,d,dt,temp){
       if(j.p>=BAL.gatherT){j.p=0;n.c-=1;j.carry=(j.carry||0)+1;j.cg=n.t;popText((n.x+.5)*TS,n.y*TS,'+1 '+G[n.t][1],GC[n.t]);if(n.c<=0){S.node[idx(n.x,n.y)]=-1;dirtyT(n.x,n.y);toast(G[n.t][0]+' node used up.')}if(j.carry>=3||n.c<=0){startTrip(b,j,{g:j.cg,a:j.carry});j.carry=0}}
     }else{
       const rc=RC[b.recipe];
-      if(!j.on){const pick=pickInputs(rc);if(!pick){st='Waiting for '+rc.in.map(s=>s.map(g=>G[g][0].toLowerCase()).join(' or ')).join(' and ');continue}for(const g of pick)S.stock[g]-=1;j.fetchN=pick.map(g=>G[g][0].toLowerCase()).join(' and ');startTrip(b,j,null);continue}
+      if(!j.on){const pick=pickInputs(rc,b,b.recipe);if(!pick){const lk=(b.ing&&b.ing[b.recipe])||[];st='Waiting for '+rc.in.map((s,si)=>(lk[si]?[lk[si]]:s).map(g=>G[g][0].toLowerCase()).join(' or ')).join(' and ');continue}for(const g of pick)S.stock[g]-=1;j.fetchN=pick.map(g=>G[g][0].toLowerCase()).join(' and ');startTrip(b,j,null);continue}
       j.p+=dt*sp*f;
       if(j.p>=BAL.cycle){j.on=false;j.p=0;b.acc+=STAR_OUT[rc.st];const k=Math.floor(b.acc+1e-9);if(k>0){b.acc-=k;haul(rc.out,k,b);popText((b.x+b.w/2)*TS,b.y*TS,'+'+k+' '+G[rc.out][1],GC[rc.out]);if(MEALS.includes(rc.out))S.stats.meals+=k}}
     }
@@ -836,7 +847,7 @@ function checkEnd(){
 }
 
 /* ================= save ================= */
-const SKEY='longrain.m1d.save',TA={tiles:Uint8Array,old:Uint8Array,fog:Uint8Array,glade:Int16Array,node:Int16Array,occ:Int32Array,road:Uint8Array,claim:Uint8Array};
+const SKEY='longrain.m1e.save',TA={tiles:Uint8Array,old:Uint8Array,fog:Uint8Array,glade:Int16Array,node:Int16Array,occ:Int32Array,road:Uint8Array,claim:Uint8Array};
 function save(){if(!S||S.over)return;try{const o={...S};delete o.connRoad;for(const k in TA)o[k]=Array.from(S[k]);localStorage.setItem(SKEY,JSON.stringify({v:1,s:o,r:R.s,cam:{x:cam.x,y:cam.y,z:cam.z}}))}catch(e){}}
 function load(){try{const raw=localStorage.getItem(SKEY);if(!raw)return false;const d=JSON.parse(raw);const o=d.s;for(const k in TA)o[k]=TA[k].from(o[k]);S=o;R.s=d.r;if(d.cam)Object.assign(cam,d.cam);return true}catch(e){return false}}
 const hasSave=()=>{try{return!!localStorage.getItem(SKEY)}catch(e){return false}};
@@ -1093,7 +1104,7 @@ function draw(t,rdt){
   const g=ui.ghost;
   { const hb=g&&g.type!=='road'?{type:g.type,x:g.x,y:g.y,w:BD[g.type].w,h:BD[g.type].h}:(sel&&BD[sel.type].nodes?sel:null);
     if(hb)highlightFor(hb,t,!!g); }
-  if(g&&g.type!=='road'){const d=BD[g.type],why=canPlace(g.type,g.x,g.y),ok=!why||why.startsWith('Not enough');
+  if(g&&g.type!=='road'){const d=BD[g.type],why=canPlace(g.type,g.x,g.y,g.move),ok=!why||why.startsWith('Not enough');
     ring(g.type,g.x,g.y,d.w,d.h);
     ctx.globalAlpha=.7;drawBuilding({type:g.type,x:g.x,y:g.y,w:d.w,h:d.h,built:true,workers:[],warm:true,id:0},t,true);ctx.globalAlpha=1;
     ctx.fillStyle=ok&&!why?'rgba(136,170,112,.28)':'rgba(199,90,75,.32)';ctx.fillRect(g.x*TS,g.y*TS,d.w*TS,d.h*TS);
@@ -1177,26 +1188,29 @@ function enterGhost(type){
 function exitGhost(){ui.ghost=null;ghostBar()}
 function placeGhost(){
   const g=ui.ghost;if(!g||g.type==='road')return exitGhost();
-  const why=canPlace(g.type,g.x,g.y);if(why){toast(why);return}
+  const why=canPlace(g.type,g.x,g.y,g.move);if(why){toast(why);return}
+  if(g.move){const b=byId(g.move);if(b){for(let yy=b.y;yy<b.y+b.h;yy++)for(let xx=b.x;xx<b.x+b.w;xx++)S.occ[idx(xx,yy)]=-1;b.jobs.forEach(releaseJob);b.jobs=b.jobs.map(()=>null);b.x=g.x;b.y=g.y;
+    for(let yy=b.y;yy<b.y+b.h;yy++)for(let xx=b.x;xx<b.x+b.w;xx++){const i=idx(xx,yy);S.occ[i]=b.id;if(S.road[i]){S.road[i]=0;dirtyT(xx,yy)}}
+    b.pop=performance.now();fxDust((b.x+b.w/2)*TS,(b.y+b.h)*TS,12);sfx('thunk');toast(BD[b.type].n+' moved.');recompute()}exitGhost();return}
   pay(BD[g.type].cost);const nb=addB(g.type,g.x,g.y,false);fxDust((g.x+BD[g.type].w/2)*TS,(g.y+BD[g.type].h)*TS,10);sfx('thunk');recompute();
   if(!REPEAT[g.type])exitGhost();else ghostBar();
 }
 function ghostBar(){
   const el=$('#ghostbar'),g=ui.ghost;el.hidden=!g;if(!g)return;const d=BD[g.type];
   if(g.type==='road'){setHTML(el,`<div class="gt"><b>Paint roads</b><small>Drag along cleared ground, 1 wood a tile. Two fingers to pan.</small></div><button class="btn main" data-act="gno">Done</button>`);return}
-  const why=canPlace(g.type,g.x,g.y);let soft='';
+  const why=canPlace(g.type,g.x,g.y,g.move);let soft='';
   if(!why&&d.kind==='cut'&&findTree({type:g.type,x:g.x,y:g.y,w:d.w,h:d.h})<0)soft='No forest edge within 8 tiles. Move it closer to the trees.';
   let reach='';
   if(d.recipes)reach+=' Makes '+d.recipes.map(k=>RC[k].n.toLowerCase()).join(', ')+'.';
   if(d.wk){const stores=S.buildings.filter(x=>x.type==='store'&&x.built);const c={x:g.x+d.w/2,y:g.y+d.h/2};const dd=Math.min(...stores.map(st=>{const sc=bc(st);return Math.abs(c.x-sc.x)+Math.abs(c.y-sc.y)}));reach+=` Storehouse ${Math.round(dd)} tiles away.`}
   if(d.nodes){const o=reachInfo({type:g.type,x:g.x,y:g.y,w:d.w,h:d.h});const ks=Object.keys(o);if(!why&&!ks.length)soft='Nothing to harvest in reach. Move it toward a glowing node.';else reach=' In reach: '+ks.map(k=>o[k]+' '+G[k][0].toLowerCase()).join(', ')+'.'}
-  setHTML(el,`<div class="gt"><b>${d.n}</b><small class="${why||soft?'bad':''}">${why?esc(why):soft||'Cost: '+costStr(d.cost)+'.'+reach+' Tap or drag to move.'}</small></div><button class="btn" data-act="gno">Cancel</button><button class="btn main" data-act="gok" ${why?'disabled':''}>Build</button>`);
+  setHTML(el,`<div class="gt"><b>${g.move?'Move ':''}${d.n}</b><small class="${why||soft?'bad':''}">${why?esc(why):soft||(g.move?'Moving is free.':'Cost: '+costStr(d.cost)+'.')+reach+' Tap or drag to move.'}</small></div><button class="btn" data-act="gno">Cancel</button><button class="btn main" data-act="gok" ${why?'disabled':''}>${g.move?'Move here':'Build'}</button>`);
 }
 function showPick(){
   const q=S.queue[0];if(!q)return;
   if(q.k==='ch'&&S.noCh){S.queue.shift();return}
   let opts;
-  if(q.k==='bp'){const left=POOL.filter(k=>!S.owned.includes(k));if(!left.length){S.queue.shift();add({planks:15,wood:20});toast('Every blueprint is already yours. The Crown sends 15 planks and 20 wood instead.');return}opts=shuffle(left).slice(0,3)}
+  if(q.k==='bp'){const left=bpOffer();if(!left.length){S.queue.shift();add({planks:15,wood:20});toast('Every blueprint is already yours. The Crown sends 15 planks and 20 wood instead.');return}opts=left}
   else{const left=Object.keys(CHR).filter(k=>!S.charters.includes(k));opts=shuffle(left).slice(0,3)}
   ui.pick={q,opts,sp:ui.speed};ui.speed=0;closePanel();sfx('card');
   const el=$('#pick');el.hidden=false;
@@ -1242,13 +1256,17 @@ function pBuilding(b){
       else h+='<div class="slot empty">'+RACES.map((RR,k)=>{const n=idle(k);return`<button data-act="as:${b.id}:${k}" ${n>0?'':'disabled'} style="--c:${RR.c}">${RR.one} <small>${Math.max(0,n)}</small></button>`}).join('')+'</div>'}
     h+='</div>';
   }
-  if(d.recipes){h+='<h3>Recipe <small>tap to switch</small></h3><div class="recipes">'+d.recipes.map(k=>{const rc=RC[k];
-    return`<button class="rec ${b.recipe===k?'on':''}" data-act="rec:${b.id}:${k}"><b>${rc.n} <span class="stars">${'★'.repeat(rc.st)}${'☆'.repeat(3-rc.st)}</span></b>${recipeHTML(rc,true)}<small>Each worker: 1 of each input → ${STAR_OUT[rc.st]} ${rc.n.toLowerCase()} every 20 s, plus the trip to fetch the inputs.</small></button>`}).join('')+'</div><p class="note">Numbers show what the Storehouse holds now. A dashed ring means any one of those will do.</p>'}
+  if(d.recipes){h+='<h3>Recipe</h3><div class="recipes">'+d.recipes.map(k=>{const rc=RC[k],on=b.recipe===k,lk=(b.ing&&b.ing[k])||[];
+    const ins=rc.in.map((slot,si)=>{if(slot.length===1){const g=slot[0],have=Math.floor(S.stock[g]);return gchip(g,have,have<1?'miss':'')}
+      return`<span class="alt">`+slot.map(g=>{const have=Math.floor(S.stock[g]),sel=lk[si]===g,dim=lk[si]&&!sel;return`<button class="gch pickable ${have<1?'miss':''} ${sel?'sel':''} ${dim?'dim':''}" data-act="ing:${b.id}:${k}:${si}:${g}"><i style="background:${GC[g]}"></i>${G[g][0]} <em>${have}</em></button>`}).join('<span class="o">or</span>')+`</span>`}).join('<span class="op">+</span>');
+    const lockTxt=rc.in.some((sl,si)=>sl.length>1&&lk[si])?'Using only '+rc.in.map((sl,si)=>sl.length>1&&lk[si]?G[lk[si]][0].toLowerCase():null).filter(Boolean).join(' and ')+'. Tap it again to let workers use whatever is most plentiful.':rc.in.some(sl=>sl.length>1)?'Tap an ingredient in a dashed ring to use only that one.':'';
+    return`<div class="rec ${on?'on':''}"><button class="rechead" data-act="rec:${b.id}:${k}"><b>${rc.n} <span class="stars">${'★'.repeat(rc.st)}${'☆'.repeat(3-rc.st)}</span></b><span class="use">${on?'In use':'Use this'}</span></button><span class="rcrow">${ins}<span class="arw">→</span>${gchip(rc.out,'×'+STAR_OUT[rc.st],'out')}</span>${lockTxt?`<small>${lockTxt}</small>`:''}</div>`}).join('')+'</div><p class="note">Numbers show what the Storehouse holds now. Each worker turns 1 of each input into the output every 20 s, plus the trip to fetch them.</p>'}
   if(d.wk&&b.built){const tt=tripTime(b);h+=`<h3>Logistics</h3><div class="trip"><span>Nearest Storehouse</span><b>${Math.round(b.dist)} tiles</b><span>Road link</span><b>${b.conn?'Yes':'No, trips take twice as long'}</b><span>Round trip</span><b>${tt.toFixed(1)} s</b></div><p class="note">${d.kind==='make'?'Workers walk to the Storehouse for every batch of ingredients.':'Workers carry what they gather back to the Storehouse before going out again.'} Build closer to a Storehouse, or link it by road, to waste less time walking.</p>`}
   if(d.beds)h+=`<p class="stat">${d.beds} beds ${d.race!=null?'for '+RACES[d.race].n:'for any race'}</p>`;
   if(d.kind==='cut')h+=`<p class="note">Trees felled this year: ${S.trees}, adding ${(S.trees*0.05).toFixed(1)} Ire. The count resets each Mistfall.</p>`;
   if(d.kind==='gather'){const c=bc(b);const ns=S.nodes.filter(n=>n.c>0&&d.nodes.includes(n.t)&&Math.max(Math.abs(n.x+.5-c.x),Math.abs(n.y+.5-c.y))<=d.range&&(S.glade[idx(n.x,n.y)]<0||S.glades[S.glade[idx(n.x,n.y)]].open));
     h+=`<p class="note">Nodes in reach: ${ns.length?ns.map(n=>`${G[n.t][0]} ${n.c}`).join(', '):'none'}.</p>`}
+  h+=`<h3>Move</h3><button class="btn" data-act="move:${b.id}">Move this building</button><p class="note">Free. Workers drop what they are doing and start again at the new spot.</p>`;
   if(b.type!=='store'||S.buildings.filter(s=>s.type==='store').length>1){
     const back={};for(const[g,a]of Object.entries(d.cost)){const v=Math.floor(a/2);if(v)back[g]=v}
     h+=`<h3>Demolish</h3><button class="btn danger" data-act="demo:${b.id}">${ui.confirm===b.id?'Tap again to confirm':'Demolish'}</button><p class="note">Returns ${Object.keys(back).length?costStr(back):'nothing'}.</p>`}
@@ -1344,7 +1362,7 @@ function hud(force){
 document.addEventListener('pointerdown',e=>{if(e.target!==cv)ui.touching=true},true);
 const untouch=()=>setTimeout(()=>{ui.touching=false},80);
 document.addEventListener('pointerup',untouch,true);document.addEventListener('pointercancel',untouch,true);
-document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el||el.disabled)return;sfx('tap');const[a,p1,p2]=el.dataset.act.split(':');act(a,p1,p2)});
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el||el.disabled)return;sfx('tap');const parts=el.dataset.act.split(':');if(parts[0]==='ing'){setIng(+parts[1],parts[2],+parts[3],parts[4]);renderPanel(true);return}const[a,p1,p2]=parts;act(a,p1,p2)});
 function act(a,p1,p2){
   switch(a){
     case 'new':startNew();break;
@@ -1365,6 +1383,7 @@ function act(a,p1,p2){
     case 'close':closePanel();break;
     case 'as':{const b=byId(+p1),r=+p2;if(b&&idle(r)>0&&b.workers.length<BD[b.type].wk){b.workers.push(r);b.jobs.push(null)}break}
     case 'un':{const b=byId(+p1),i=+p2;if(b&&b.workers[i]!=null){releaseJob(b.jobs[i]);b.workers.splice(i,1);b.jobs.splice(i,1)}break}
+    case 'move':{const b=byId(+p1);if(b){closePanel();ui.ghost={type:b.type,x:b.x,y:b.y,move:b.id};ghostBar()}break}
     case 'rec':{const b=byId(+p1);if(b&&b.recipe!==p2){b.recipe=p2;b.jobs=b.jobs.map(()=>null);b.acc=0}break}
     case 'demo':demolish(+p1);break;
     case 'hup':upgradeHearth();break;
@@ -1429,7 +1448,7 @@ window.__lr={get S(){return S},ui,tick,newGame,startNew,act,recompute,canPlace,p
 <div id="updBar" class="glass" hidden style="position:fixed;z-index:20;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;gap:12px;align-items:center;padding:10px 12px 10px 16px;max-width:calc(100% - 32px)"><span>A new version of The Long Rain is ready.</span><button class="btn main" onclick="try{window.__lr&&window.__lr.S&&window.__lr.save&&window.__lr.save()}catch(e){};location.reload()">Update now</button></div>
 <div id="installHint" class="ov" hidden><div class="card glass"><h1 style="font-size:34px">Install on your iPad</h1><p class="lede">Tap the Share button in Safari, then <b>Add to Home Screen</b>. The Long Rain then opens full screen and works offline.</p><div class="row"><button class="btn main" id="hintOk">Got it</button></div></div></div>
 <script>
-const LR_VERSION='M1.8';
+const LR_VERSION='M1.9';
 if('serviceWorker' in navigator){addEventListener('load',()=>{
   navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{
     const check=()=>r.update().catch(()=>{});check();
