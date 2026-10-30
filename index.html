@@ -420,7 +420,7 @@ const buildTime=d=>6+3*d.w*d.h;
 /* ================= world generation ================= */
 function newGame(seed){
   R.s=seed|0;
-  S={seed,t:0,tiles:new Uint8Array(N),old:new Uint8Array(N),fog:new Uint8Array(N),glade:new Int16Array(N).fill(-1),node:new Int16Array(N).fill(-1),occ:new Int32Array(N).fill(-1),road:new Uint8Array(N),claim:new Uint8Array(N),
+  S={seed,t:0,tiles:new Uint8Array(N),old:new Uint8Array(N),stump:new Uint8Array(N),fog:new Uint8Array(N),glade:new Int16Array(N).fill(-1),node:new Int16Array(N).fill(-1),occ:new Int32Array(N).fill(-1),road:new Uint8Array(N),claim:new Uint8Array(N),
     nodes:[],glades:[],buildings:[],nid:1,
     stock:{wood:30,planks:6,stone:0,bricks:0,fibre:0,fabric:4,herbs:0,berries:20,mushrooms:0,roots:12,stew:0,herbalstew:0,porridge:0},
     races:RACES.map(()=>({pop:3,acc:0,noFood:0,leave:0,res:0,terms:[],rate:0,homeless:0})),
@@ -458,7 +458,7 @@ function genMap(){
     const count=gl.t.length>=20?3:gl.t.length>=12?2:1;
     for(let c=0;c<count;c++){const type=c===0&&k<must.length?must[k]:pool[ri(0,pool.length-1)];
       const free=gl.t.filter(t=>S.node[t]<0);if(!free.length)break;const t=free[ri(0,free.length-1)];addNode(type,t%MW,(t/MW)|0,ri(70,140))}
-    if(rnd()<0.3){const free=gl.t.filter(t=>S.node[t]<0);for(let w=0;w<ri(1,2)&&free.length>3;w++){const t=free.splice(ri(0,free.length-1),1)[0];S.tiles[t]=2}}
+    if(rnd()<0.35&&gl.t.length>=10){const set=new Set(gl.t.filter(t=>S.node[t]<0));const st=[...set][ri(0,set.size-1)];const pond=[st];set.delete(st);const want=Math.min(ri(3,9),Math.floor(gl.t.length*.45));let g2=0;while(pond.length<want&&g2<200){g2++;const t=pond[ri(0,pond.length-1)];const d=[1,-1,MW,-MW][ri(0,3)];const n=t+d;if(set.has(n)){set.delete(n);pond.push(n)}}for(const t of pond)S.tiles[t]=2}
     if(rnd()<0.42)gl.cache=CACHES[ri(0,CACHES.length-1)];
   });
   addNode('berries',44,44,130);addNode('roots',36,45,130);addNode('mushrooms',45,36,90);addNode('herbs',40,34,70);addNode('berries',35,35,80);
@@ -617,7 +617,7 @@ function gainRenown(n){S.renown+=n+(has('ironWrit')&&n>0?1:0)}
 function haul(g,a,b){const delay=(b.conn?1+b.dist*0.12:2+b.dist*0.35)*(has('swiftHaulers')?0.5:1);S.haul.push({g,a,at:S.t+delay})}
 function cut(i,b,elf){
   const x=i%MW,y=(i/MW)|0,old=S.old[i];
-  S.tiles[i]=1;S.old[i]=0;S.claim[i]=0;S.trees++;S.stats.trees++;
+  S.tiles[i]=1;S.old[i]=0;S.stump[i]=1;S.claim[i]=0;S.trees++;S.stats.trees++;
   const wa=(old?6:ri(2,4))+(has('thickBark')?2:0);fxTree(x,y,wa);dirtyT(x,y);reveal(x+.5,y+.5,elf?3:2);
   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const xx=x+dx,yy=y+dy;if(!inB(xx,yy))continue;const g=S.glade[idx(xx,yy)];if(g>=0&&!S.glades[g].open)openGlade(S.glades[g])}
   return wa;
@@ -851,7 +851,7 @@ function checkEnd(){
 }
 
 /* ================= save ================= */
-const SKEY='longrain.m1e.save',TA={tiles:Uint8Array,old:Uint8Array,fog:Uint8Array,glade:Int16Array,node:Int16Array,occ:Int32Array,road:Uint8Array,claim:Uint8Array};
+const SKEY='longrain.m1f.save',TA={tiles:Uint8Array,old:Uint8Array,stump:Uint8Array,fog:Uint8Array,glade:Int16Array,node:Int16Array,occ:Int32Array,road:Uint8Array,claim:Uint8Array};
 function save(){if(!S||S.over)return;try{const o={...S};delete o.connRoad;for(const k in TA)o[k]=Array.from(S[k]);localStorage.setItem(SKEY,JSON.stringify({v:1,s:o,r:R.s,cam:{x:cam.x,y:cam.y,z:cam.z}}))}catch(e){}}
 function load(){try{const raw=localStorage.getItem(SKEY);if(!raw)return false;const d=JSON.parse(raw);const o=d.s;for(const k in TA)o[k]=TA[k].from(o[k]);S=o;R.s=d.r;if(d.cam)Object.assign(cam,d.cam);return true}catch(e){return false}}
 const hasSave=()=>{try{return!!localStorage.getItem(SKEY)}catch(e){return false}};
@@ -859,11 +859,20 @@ const clearSave=()=>{try{localStorage.removeItem(SKEY)}catch(e){}};
 
 /* ================= painted assets ================= */
 const ART={};
+const ARTLIST=["building-cottage-human", "building-cottage-human-dark", "building-crude-workstation", "building-crude-workstation-dark", "building-field-kitchen", "building-field-kitchen-dark", "building-foragers-camp", "building-foragers-camp-dark", "building-great-hearth-1", "building-great-hearth-1-guttered", "building-great-hearth-2", "building-great-hearth-2-guttered", "building-great-hearth-3", "building-great-hearth-3-guttered", "building-great-hearth-4", "building-great-hearth-4-guttered", "building-hovel", "building-hovel-dark", "building-lookout-tower", "building-lookout-tower-dark", "building-makeshift-post", "building-makeshift-post-dark", "building-small-hearth", "building-small-hearth-dark", "building-storehouse", "building-storehouse-dark", "building-woodcutter", "building-woodcutter-dark", "decal-contact-shadow-1x1", "decal-contact-shadow-1x2", "decal-contact-shadow-2x2", "decal-contact-shadow-3x3", "decal-hearth-plaza", "decal-yard-mud", "fog-corner-inner-mask", "fog-corner-outer-mask", "fog-edge-mask", "prop-stump-1", "prop-stump-2", "prop-stump-3", "prop-stump-4", "prop-stump-5", "prop-stump-6", "prop-tree-broadleaf-1", "prop-tree-broadleaf-2", "prop-tree-broadleaf-3", "prop-tree-broadleaf-4", "prop-tree-fir-1", "prop-tree-fir-2", "prop-tree-fir-3", "prop-tree-fir-4", "terrain-fog", "terrain-forest-dense-1", "terrain-forest-dense-2", "terrain-forest-dense-3", "terrain-forest-stumps-1", "terrain-forest-stumps-2", "terrain-forest-stumps-3", "terrain-grass-dry-1", "terrain-grass-dry-2", "terrain-grass-dry-3", "terrain-grass-wet-1", "terrain-grass-wet-2", "terrain-grass-wet-3", "terrain-moss-1", "terrain-moss-2", "terrain-moss-3", "terrain-road-dirt-00", "terrain-road-dirt-01", "terrain-road-dirt-02", "terrain-road-dirt-03", "terrain-road-dirt-04", "terrain-road-dirt-05", "terrain-road-dirt-05-2", "terrain-road-dirt-05-3", "terrain-road-dirt-06", "terrain-road-dirt-07", "terrain-road-dirt-08", "terrain-road-dirt-09", "terrain-road-dirt-10", "terrain-road-dirt-10-2", "terrain-road-dirt-10-3", "terrain-road-dirt-11", "terrain-road-dirt-12", "terrain-road-dirt-13", "terrain-road-dirt-14", "terrain-road-dirt-15", "terrain-shore-deep-00", "terrain-shore-deep-01", "terrain-shore-deep-02", "terrain-shore-deep-03", "terrain-shore-deep-04", "terrain-shore-deep-05", "terrain-shore-deep-06", "terrain-shore-deep-07", "terrain-shore-deep-08", "terrain-shore-deep-09", "terrain-shore-deep-10", "terrain-shore-deep-11", "terrain-shore-deep-12", "terrain-shore-deep-13", "terrain-shore-deep-14", "terrain-shore-deep-15", "terrain-shore-deep-inner-ne", "terrain-shore-deep-inner-nw", "terrain-shore-deep-inner-se", "terrain-shore-deep-inner-sw", "terrain-shore-grass-00", "terrain-shore-grass-01", "terrain-shore-grass-02", "terrain-shore-grass-03", "terrain-shore-grass-04", "terrain-shore-grass-05", "terrain-shore-grass-06", "terrain-shore-grass-07", "terrain-shore-grass-08", "terrain-shore-grass-09", "terrain-shore-grass-10", "terrain-shore-grass-11", "terrain-shore-grass-12", "terrain-shore-grass-13", "terrain-shore-grass-14", "terrain-shore-grass-15", "terrain-shore-grass-inner-ne", "terrain-shore-grass-inner-nw", "terrain-shore-grass-inner-se", "terrain-shore-grass-inner-sw", "terrain-water-deep-1", "terrain-water-deep-2", "terrain-water-deep-3", "terrain-water-shallow-1", "terrain-water-shallow-2", "terrain-water-shallow-3", "villager-human-walk"];
 function loadArt(){
-  const list={g1:'terrain-grass-dry-1',g2:'terrain-grass-dry-2',g3:'terrain-grass-dry-3',wc:'building-woodcutter',wcd:'building-woodcutter-dark',yard:'decal-yard-mud',vh:'villager-human-walk'};
-  for(const[k,f]of Object.entries(list)){const im=new Image();im.onload=()=>{ART[k]=(k==='wc'||k==='wcd'||k==='yard')?prescale(im,.5):im;if(k==='yard')ART.yardT=tintYard(im);if(k==='vh')ART.vr=RACES.map((r,i)=>tintSheet(im,i===0?null:r.c));if(k[0]==='g'&&S)dirtyAll()};im.onerror=()=>{};im.src='assets/'+f+'.png'}
+  let left=ARTLIST.length;const done=()=>{left--;if(S&&(left%12===0||left<=0))dirtyAll()};
+  for(const n of ARTLIST){const im=new Image();im.onload=()=>{ART[n]=im;
+    if(n==='decal-yard-mud')ART.yardT=tintDecal(im,'rgb(176,150,118)');
+    if(n==='decal-hearth-plaza')ART.plazaT=tintDecal(im,'rgb(205,196,178)');
+    if(n==='villager-human-walk'){ART.vh=im;ART.vr=RACES.map((r,i)=>tintSheet(im,i===0?null:r.c))}
+    if(ART['terrain-fog']&&ART['fog-edge-mask']&&ART['fog-corner-outer-mask']&&!ART.fogE)makeFog();
+    done()};im.onerror=done;im.src='assets/'+n+'.png'}
 }
+function rotPiece(mask,tex,r){const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');x.translate(32,32);x.rotate(r*Math.PI/2);x.drawImage(mask,-32,-32,64,64);x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation='source-in';x.drawImage(tex,0,0,64,64);return c}
+function makeFog(){const t0=ART['terrain-fog'],t=document.createElement('canvas');t.width=t.height=64;const q=t.getContext('2d');q.drawImage(t0,0,0,64,64);q.globalCompositeOperation='multiply';q.fillStyle='rgb(120,132,146)';q.fillRect(0,0,64,64);ART.fogT=t;ART.fogE=[0,1,2,3].map(r=>rotPiece(ART['fog-edge-mask'],t,r));ART.fogC=[0,1,2,3].map(r=>rotPiece(ART['fog-corner-outer-mask'],t,r))}
 function prescale(im,f){const c=document.createElement('canvas');c.width=im.width*f;c.height=im.height*f;const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(im,0,0,c.width,c.height);return c}
+function tintDecal(im,col){const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const x=c.getContext('2d');x.drawImage(im,0,0);x.globalCompositeOperation='multiply';x.fillStyle=col;x.fillRect(0,0,c.width,c.height);x.globalCompositeOperation='destination-in';x.drawImage(im,0,0);return c}
 function tintYard(im){const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const x=c.getContext('2d');x.drawImage(im,0,0);x.globalCompositeOperation='multiply';x.fillStyle='rgb(176,150,118)';x.fillRect(0,0,c.width,c.height);x.globalCompositeOperation='destination-in';x.drawImage(im,0,0);return c}
 function tintSheet(im,col){const c=document.createElement('canvas');c.width=im.width/2;c.height=im.height/2;const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(im,0,0,c.width,c.height);if(col){x.globalCompositeOperation='color';x.globalAlpha=.55;x.fillStyle=col;x.fillRect(0,0,c.width,c.height);x.globalAlpha=1;x.globalCompositeOperation='destination-in';x.drawImage(im,0,0,c.width,c.height)}return c}
 loadArt();
@@ -880,20 +889,51 @@ const GROUND=['#4b5639','#4f5a3a','#475234','#525b3d'],CANOPY=['#2f4a33','#36543
 function drawChunk(c){tx=chunks[c].cx;
   const x0=(c%NC)*CH,y0=((c/NC)|0)*CH;
   tx.setTransform(CS,0,0,CS,-x0*TS*CS,-y0*TS*CS);tx.save();tx.beginPath();tx.rect(x0*TS,y0*TS,CH*TS,CH*TS);tx.clip();
-  const xa=Math.max(0,x0-1),xb=Math.min(MW-1,x0+CH),ya=Math.max(0,y0-1),yb=Math.min(MH-1,y0+CH);
+  const xa=Math.max(0,x0-1),xb=Math.min(MW-1,x0+CH),ya=Math.max(0,y0-1),yb=Math.min(MH-1,y0+CH+1);
   for(let y=ya;y<=yb;y++)for(let x=xa;x<=xb;x++)ground(idx(x,y),x,y);
-  for(let y=ya;y<=yb;y++)for(let x=xa;x<=xb;x++){const i=idx(x,y);if(S.tiles[i]===0)canopy(i,x,y)}
   for(let y=ya;y<=yb;y++)for(let x=xa;x<=xb;x++){const i=idx(x,y);if(S.node[i]>=0)drawNode(S.nodes[S.node[i]],x,y,i)}
-  for(let y=ya;y<=yb;y++)for(let x=xa;x<=xb;x++){const i=idx(x,y);if(S.fog[i]===1){tx.fillStyle=S.glade[i]>=0?'rgba(26,36,34,.5)':'rgba(11,17,20,.66)';tx.fillRect(x*TS,y*TS,TS,TS)}}
-  tx.fillStyle='#0c1215';
-  for(let y=ya;y<=yb;y++)for(let x=xa;x<=xb;x++){const i=idx(x,y);if(S.fog[i]===0){tx.beginPath();tx.arc(x*TS+TS/2,y*TS+TS/2,TS*0.8,0,6.2832);tx.fill()}}
+  if(ART['prop-tree-fir-1']){const list=[];
+    for(let y=ya;y<=yb;y++)for(let x=xa;x<=xb;x++){const i=idx(x,y);if(S.tiles[i]!==0||S.fog[i]!==2)continue;
+      const n=(S.old[i]?3:2)+(hh(i,31)<.35?1:0);
+      for(let k=0;k<n;k++){const fx=(x+.18+hh(i,k*3+40)*.64)*TS,fy=(y+.38+hh(i,k*3+41)*.62)*TS,sc=(S.old[i]?1.2:.88)+hh(i,k*3+42)*.3;
+        list.push([fy,fx,TREES[Math.floor(hh(i,k+60)*TREES.length)],sc*TS,S.old[i]])}}
+    list.sort((p,q)=>p[0]-q[0]);
+    for(const[fy,fx,nm,sz,old]of list){const im=ART[nm];if(!im)continue;tx.fillStyle='rgba(8,14,10,.28)';tx.beginPath();tx.ellipse(fx+2,fy-1,sz*.22,sz*.08,0,0,6.2832);tx.fill();tx.drawImage(im,fx-sz/2,fy-sz*124/128,sz,sz)}
+  }else for(let y=ya;y<=yb;y++)for(let x=xa;x<=xb;x++){const i=idx(x,y);if(S.tiles[i]===0)canopy(i,x,y)}
+  for(let y=ya;y<=yb;y++)for(let x=xa;x<=xb;x++){const i=idx(x,y);if(S.fog[i]===1){tx.fillStyle=S.glade[i]>=0?'rgba(26,36,34,.45)':'rgba(11,17,20,.55)';tx.fillRect(x*TS,y*TS,TS,TS)}}
+  const F=ART.fogT;
+  if(F&&ART.fogE){
+    const f0=(x,y)=>inB(x,y)&&S.fog[idx(x,y)]===0;
+    for(let y=ya;y<=yb;y++)for(let x=xa;x<=xb;x++){const i=idx(x,y),px=x*TS,py=y*TS;
+      if(S.fog[i]===0){tx.drawImage(F,px,py,TS,TS);continue}
+      const N=f0(x,y-1),E=f0(x+1,y),So=f0(x,y+1),W=f0(x-1,y);
+      if(So)tx.drawImage(ART.fogE[0],px,py,TS,TS);if(W)tx.drawImage(ART.fogE[1],px,py,TS,TS);if(N)tx.drawImage(ART.fogE[2],px,py,TS,TS);if(E)tx.drawImage(ART.fogE[3],px,py,TS,TS);
+      if(!So&&!E&&f0(x+1,y+1))tx.drawImage(ART.fogC[0],px,py,TS,TS);if(!So&&!W&&f0(x-1,y+1))tx.drawImage(ART.fogC[1],px,py,TS,TS);
+      if(!N&&!W&&f0(x-1,y-1))tx.drawImage(ART.fogC[2],px,py,TS,TS);if(!N&&!E&&f0(x+1,y-1))tx.drawImage(ART.fogC[3],px,py,TS,TS)}
+  }else{tx.fillStyle='#0c1215';
+    for(let y=ya;y<=yb;y++)for(let x=xa;x<=xb;x++){const i=idx(x,y);if(S.fog[i]===0){tx.beginPath();tx.arc(x*TS+TS/2,y*TS+TS/2,TS*0.8,0,6.2832);tx.fill()}}}
   tx.restore();
+}
+const TREES=['prop-tree-fir-1','prop-tree-fir-2','prop-tree-fir-3','prop-tree-fir-4','prop-tree-broadleaf-1','prop-tree-broadleaf-2','prop-tree-broadleaf-3','prop-tree-broadleaf-4'];
+const pad2=n=>String(n).padStart(2,'0');
+const isW=(x,y)=>inB(x,y)&&S.tiles[idx(x,y)]===2;
+function isDeep(x,y){if(!isW(x,y))return false;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if(!isW(x+dx,y+dy))return false;return true}
+function waterArt(i,x,y){
+  const px=x*TS,py=y*TS,deep=isDeep(x,y),is=deep?isDeep:isW,pre=deep?'terrain-shore-deep-':'terrain-shore-grass-';
+  const m=(is(x,y-1)?1:0)|(is(x+1,y)?2:0)|(is(x,y+1)?4:0)|(is(x-1,y)?8:0);
+  const inner=[];if((m&3)===3&&!is(x+1,y-1))inner.push('ne');if((m&6)===6&&!is(x+1,y+1))inner.push('se');if((m&12)===12&&!is(x-1,y+1))inner.push('sw');if((m&9)===9&&!is(x-1,y-1))inner.push('nw');
+  let base=ART[pre+pad2(m)];if(m===15&&!inner.length)base=ART[(deep?'terrain-water-deep-':'terrain-water-shallow-')+(1+Math.floor(hh(i,8)*3))]||base;
+  if(!base)return false;tx.drawImage(base,px,py,TS,TS);for(const c of inner){const im=ART[pre+'inner-'+c];if(im)tx.drawImage(im,px,py,TS,TS)}return true;
 }
 function ground(i,x,y){
   const px=x*TS,py=y*TS,t=S.tiles[i];
+  if(t===2&&waterArt(i,x,y))return;
+  if(S.road[i]&&ART['terrain-road-dirt-00']){const m=(y>0&&S.road[i-MW]?1:0)|(x<MW-1&&S.road[i+1]?2:0)|(y<MH-1&&S.road[i+MW]?4:0)|(x>0&&S.road[i-1]?8:0);let nm='terrain-road-dirt-'+pad2(m);if(m===5||m===10){const v=Math.floor(hh(i,77)*3);if(v)nm+='-'+(v+1)}const im=ART[nm];if(im){tx.drawImage(im,px,py,TS,TS);return}}
+  if(t===0&&S.fog[i]===1&&ART['terrain-forest-dense-1']){tx.drawImage(ART['terrain-forest-dense-'+(1+Math.floor(hh(i,3)*3))],px,py,TS,TS);return}
+  if(t===1&&S.stump&&S.stump[i]&&ART['terrain-forest-stumps-1']){tx.drawImage(ART['terrain-forest-stumps-'+(1+Math.floor(hh(i,5)*3))],px,py,TS,TS);return}
   if(t===2){tx.fillStyle='#2b4450';tx.fillRect(px,py,TS,TS);tx.strokeStyle='rgba(140,175,190,.25)';tx.lineWidth=1.2;tx.beginPath();for(let k=0;k<2;k++){const yy=py+8+k*12+hh(i,k)*6;tx.moveTo(px+4+hh(i,k+3)*8,yy);tx.lineTo(px+14+hh(i,k+5)*12,yy)}tx.stroke();return}
-  const gi=ART['g'+(1+Math.floor(hh(i,1)*3))];
-  if(gi){tx.drawImage(gi,px,py,TS,TS);if(t===0){tx.fillStyle='rgba(20,34,24,.55)';tx.fillRect(px,py,TS,TS)}else{tx.fillStyle='rgba(26,34,30,.22)';tx.fillRect(px,py,TS,TS)}}
+  const gi=ART['terrain-grass-dry-'+(1+Math.floor(hh(i,1)*3))];
+  if(gi){tx.drawImage(gi,px,py,TS,TS);if(t===0){tx.fillStyle='rgba(18,30,22,.32)';tx.fillRect(px,py,TS,TS)}else{tx.fillStyle='rgba(26,34,30,.16)';tx.fillRect(px,py,TS,TS)}}
   else{tx.fillStyle=t===0?'#26372a':GROUND[Math.floor(hh(i,1)*GROUND.length)];tx.fillRect(px,py,TS,TS)}
   if(t===1&&!gi){for(let k=0;k<4;k++){tx.fillStyle=k%2?'rgba(30,38,24,.35)':'rgba(120,140,90,.18)';tx.fillRect(px+hh(i,k+10)*28,py+hh(i,k+20)*28,3+hh(i,k)*4,2)}
     if(S.glade[i]<0&&hh(i,40)<0.12){tx.fillStyle='rgba(70,60,40,.35)';tx.beginPath();tx.ellipse(px+16,py+16,10,6,0,0,6.2832);tx.fill()}}
@@ -978,11 +1018,13 @@ function drawSite(b,t){
   else{ctx.fillStyle=col;ctx.beginPath();ctx.arc(cx,cy-20-Math.abs(Math.sin(t*4))*4,4,0,6.2832);ctx.fill();ctx.fillRect(cx-1,cy-17-Math.abs(Math.sin(t*4))*4,2,4)}
 }
 function drawBuilding2(b,t,ghost,d,x,y,w,h){
-  const spr=(b.built||ghost)&&b.type==='woodcutter'&&ART.wc;
+  const key=b.type==='hearth'?'building-great-hearth-'+S.hearth.level+(S.hearth.fuel>0?'':'-guttered'):SPR[b.type],im0=key&&ART[key];
+  const spr=(b.built||ghost)&&im0;
   if(spr){
-    if(ART.yardT)ctx.drawImage(ART.yardT,x,y,w,h);
-    ctx.fillStyle='rgba(0,0,0,.30)';ctx.beginPath();ctx.ellipse(x+w*.47,y+h*.6,w*.42,h*.2,0,0,6.2832);ctx.fill();
-    const im=(!ghost&&!b.warm&&ART.wcd)?ART.wcd:ART.wc;ctx.drawImage(im,x,y+h-w*1.5,w,w*1.5);
+    if(b.type==='hearth'&&ART.plazaT)ctx.drawImage(ART.plazaT,x,y,w,h);
+    if(b.type==='woodcutter'&&ART.yardT)ctx.drawImage(ART.yardT,x,y,w,h);
+    const cs=ART['decal-contact-shadow-'+b.w+'x'+b.h];if(cs)ctx.drawImage(cs,x,y,w,h);
+    const im=(!ghost&&!b.warm&&b.type!=='hearth'&&ART[key+'-dark'])||im0,dw=im.width/64*TS,dh=im.height/64*TS;ctx.drawImage(im,x+w/2-dw/2,y+h-dh,dw,dh);
   }else{
   ctx.fillStyle='rgba(0,0,0,.28)';rr(ctx,x+3,y+5,w-3,h-4,6);ctx.fill();
   if(!b.built&&!ghost){
@@ -1022,7 +1064,7 @@ function drawBuilding2(b,t,ghost,d,x,y,w,h){
   }
   if(!ghost&&b.built&&!b.warm&&d.art!=='hearth'&&!spr){ctx.fillStyle='rgba(8,16,28,.36)';rr(ctx,x+1,y+1,w-2,h-2,5);ctx.fill()}
   if(!ghost&&!ART.vr)for(let k=0;k<b.workers.length;k++){ctx.fillStyle=RACES[b.workers[k]].c;ctx.beginPath();ctx.arc(x+6+k*7,y+h-3+Math.sin(t*4+k+b.id)*1,3,0,6.2832);ctx.fill()}
-  if(cam.z>=1.45&&!ghost){ctx.font='600 8px Alegreya Sans, sans-serif';ctx.textAlign='center';ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillText(d.n,x+w/2+.6,y+h+9.6);ctx.fillStyle='#ece3cc';ctx.fillText(d.n,x+w/2,y+h+9)}
+  if(cam.z>=1.45&&!ghost&&!spr){ctx.font='600 8px Alegreya Sans, sans-serif';ctx.textAlign='center';ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillText(d.n,x+w/2+.6,y+h+9.6);ctx.fillStyle='#ece3cc';ctx.fillText(d.n,x+w/2,y+h+9)}
 }
 function walkers(t){
   const out=[],stores=S.buildings.filter(b=>b.type==='store'&&b.built),an=Math.floor(t*Math.max(1,ui.speed)/0.16)%4;
@@ -1090,6 +1132,7 @@ document.addEventListener('pointerdown',()=>audioInit(),true);
 
 const GLOW=(()=>{const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');const g=x.createRadialGradient(128,128,4,128,128,128);g.addColorStop(0,'rgba(233,140,60,.30)');g.addColorStop(.6,'rgba(233,140,60,.08)');g.addColorStop(1,'rgba(233,140,60,0)');x.fillStyle=g;x.fillRect(0,0,256,256);return c})();
 const HINT=(()=>{const c=document.createElement('canvas');c.width=c.height=96;const x=c.getContext('2d');x.scale(4,4);x.strokeStyle='rgba(236,227,204,.6)';x.lineWidth=1.4;x.setLineDash([3,3]);x.beginPath();x.arc(12,12,9,0,Math.PI*2);x.stroke();x.setLineDash([]);x.fillStyle='rgba(236,227,204,.75)';x.beginPath();x.ellipse(12,12,2.5,5,.6,0,Math.PI*2);x.fill();return c})();
+const SPR={woodcutter:'building-woodcutter',forager:'building-foragers-camp',hovel:'building-hovel',cottage:'building-cottage-human',store:'building-storehouse',smallhearth:'building-small-hearth',workstation:'building-crude-workstation',kitchen:'building-field-kitchen',lookout:'building-lookout-tower'};
 const drops=[];for(let k=0;k<420;k++)drops.push({x:Math.random(),y:Math.random(),l:.6+Math.random()*.6,s:.8+Math.random()*.6});
 function draw(t,rdt){
   const W=cv.width,H=cv.height;
@@ -1459,7 +1502,7 @@ window.__lr={get S(){return S},ui,tick,newGame,startNew,act,recompute,canPlace,p
 <div id="updBar" class="glass" hidden style="position:fixed;z-index:20;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;gap:12px;align-items:center;padding:10px 12px 10px 16px;max-width:calc(100% - 32px)"><span>A new version of The Long Rain is ready.</span><button class="btn main" onclick="try{window.__lr&&window.__lr.S&&window.__lr.save&&window.__lr.save()}catch(e){};location.reload()">Update now</button></div>
 <div id="installHint" class="ov" hidden><div class="card glass"><h1 style="font-size:34px">Install on your iPad</h1><p class="lede">Tap the Share button in Safari, then <b>Add to Home Screen</b>. The Long Rain then opens full screen and works offline.</p><div class="row"><button class="btn main" id="hintOk">Got it</button></div></div></div>
 <script>
-const LR_VERSION='M1.11';
+const LR_VERSION='M1.12';
 if('serviceWorker' in navigator){addEventListener('load',()=>{
   navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{
     const check=()=>r.update().catch(()=>{});check();
