@@ -87,6 +87,10 @@ small{color:var(--dim)}
 .rbar em{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--gold)}
 .race .warnline{grid-column:1/-1;font-size:11.5px;color:var(--blood)}
 #notes{padding:9px 11px;font-size:13px}
+#highBtn{display:grid;gap:1px;padding:9px 12px;width:100%;min-height:52px;text-align:left}
+#highBtn b{font:17px var(--fd);color:var(--gold)}
+#highBtn small{font-size:12px}
+#highBtn.ready{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset,0 0 18px rgba(217,178,91,.35)}
 #notes h4{margin:0;font:14px var(--fd);display:flex;justify-content:space-between;align-items:center;width:100%}
 #notes ol{margin:6px 0 0;padding-left:18px;display:grid;gap:3px;color:var(--dim)}
 #notes li.done{color:var(--faint);text-decoration:line-through}
@@ -244,7 +248,7 @@ body.panel-open #alerts{display:none}
       <button class="bar" data-act="ire"><span>Ire</span><span class="track" id="ireT"><i id="ireF"></i></span><span class="v" id="ireV">0</span></button>
     </div>
     <button id="res" class="glass" data-act="store" aria-label="Storehouse"></button>
-    <div id="left"><div id="races" style="display:grid;gap:8px"></div><div id="notes" class="glass"></div></div>
+    <div id="left"><button id="highBtn" class="glass" data-act="high"></button><div id="races" style="display:grid;gap:8px"></div><div id="notes" class="glass"></div></div>
     <div id="alerts"></div>
     <div id="drawer" class="glass" aria-label="Build"></div>
     <div id="speed" class="glass"></div>
@@ -282,7 +286,7 @@ const SEASONS=[
  {n:'Mistfall',len:120,d:'Steady rain. A good season to build and explore.'},
  {n:'Clearing',len:150,d:'Light showers. New settlers arrive as it begins.'},
  {n:'Tempest',len:150,d:'Storm. Fuel burns 1.5×, most races lose 2 resolve, and nobody works outside hearth range.'}];
-const BAL={thr:13,renownK:0.06,patYear:1.5,eatEvery:120,burn:0.1,fuelCap:60,darkLose:150,leave:90,cycle:20,cutT:15,gatherT:6};
+const BAL={thr:13,renownK:0.06,patYear:1.5,eatEvery:120,burn:0.1,fuelCap:60,darkLose:150,leave:90,cycle:20,cutT:18,gatherT:6};
 const IRE_T=[5,10,16,23,31];
 const IRE_FX=['All races lose 1 resolve','Camps work 30% slower','Hearth fuel burns 2× instead of 1.5×','Resolve loss rises to 3, and the wood takes a worker from outside hearth range every minute','Raw food rots in the Storehouse (arrives in Milestone 2)'];
 const G={wood:['Wood','wood'],planks:['Planks','planks'],stone:['Stone','stone'],bricks:['Bricks','bricks'],fibre:['Plant fibre','fibre'],fabric:['Fabric','fabric'],herbs:['Herbs','herbs'],berries:['Berries','berries'],mushrooms:['Mushrooms','mushr.'],roots:['Roots','roots'],stew:['Stew','stew'],herbalstew:['Herbal Stew','h. stew'],porridge:['Porridge','porridge']};
@@ -302,12 +306,12 @@ const RC={
 const STAR_OUT=[0,1,1.5,2];
 const BD={
  hearth:{n:'Great Hearth',w:3,h:3,cost:{},art:'hearth',desc:'The ember of the Undying Hearth. It refills itself from stored wood. If it stays dark for a full season, the settlement is lost.'},
- woodcutter:{n:"Woodcutters' Camp",w:2,h:2,cost:{wood:10},wk:3,kind:'cut',range:8,art:'camp',roof:'#7d6040',pile:'logs',desc:'Fells the nearest trees at the forest edge within 8 tiles. The only way into the Wyldwood. Each camp adds 1 Ire, and every tree felled adds a little more.'},
- forager:{n:"Foragers' Camp",w:2,h:2,cost:{wood:10},wk:2,kind:'gather',range:6,nodes:['berries','mushrooms','roots','herbs'],fav:'elves',art:'camp',roof:'#84505a',pile:'basket',desc:'Gathers berries, mushrooms, roots and herbs from nodes within 6 tiles, taking whatever the Storehouse holds least of.'},
- hovel:{n:'Hovel',w:1,h:2,cost:{wood:5},beds:2,race:null,art:'house',wall:'#7b6c56',roof:'#5d5444',desc:'A leaky roof for 2 villagers of any race. Better than the rain.'},
+ woodcutter:{n:"Woodcutters' Camp",w:2,h:2,cost:{wood:12},wk:3,kind:'cut',range:8,art:'camp',roof:'#7d6040',pile:'logs',desc:'Fells the nearest trees at the forest edge within 8 tiles. The only way into the Wyldwood. Each camp adds 1 Ire, and every tree felled adds a little more.'},
+ forager:{n:"Foragers' Camp",w:2,h:2,cost:{wood:12,planks:2},wk:2,kind:'gather',range:6,nodes:['berries','mushrooms','roots','herbs'],fav:'elves',art:'camp',roof:'#84505a',pile:'basket',desc:'Gathers berries, mushrooms, roots and herbs from nodes within 6 tiles, taking whatever the Storehouse holds least of.'},
+ hovel:{n:'Hovel',w:1,h:2,cost:{wood:8},beds:2,race:null,art:'house',wall:'#7b6c56',roof:'#5d5444',desc:'A leaky roof for 2 villagers of any race. Better than the rain.'},
  road:{n:'Road',w:1,h:1,cost:{wood:1},desc:'Buildings beside a road that reaches a Storehouse haul faster. Without one they work at 75% speed.'},
- workstation:{n:'Crude Workstation',w:2,h:2,cost:{wood:15},wk:2,kind:'make',recipes:['planks','bricks','fabric'],fav:'dwarves',art:'shop',wall:'#7d6a52',roof:'#6a5340',desc:'A rough bench for planks, bricks and fabric. Slow, but it needs no blueprint.'},
- kitchen:{n:'Field Kitchen',w:2,h:2,cost:{wood:15},wk:2,kind:'make',recipes:['stew','herbalstew','porridge'],fav:'humans',art:'shop',wall:'#86735a',roof:'#8c5a3a',desc:'Cooks stew, herbal stew and porridge. Each food a race likes adds 2 resolve while any is in stock.'},
+ workstation:{n:'Crude Workstation',w:2,h:2,cost:{wood:20},wk:2,kind:'make',recipes:['planks','bricks','fabric'],fav:'dwarves',art:'shop',wall:'#7d6a52',roof:'#6a5340',desc:'A rough bench for planks, bricks and fabric. Slow, but it needs no blueprint.'},
+ kitchen:{n:'Field Kitchen',w:2,h:2,cost:{wood:15,planks:5},wk:2,kind:'make',recipes:['stew','herbalstew','porridge'],fav:'humans',art:'shop',wall:'#86735a',roof:'#8c5a3a',desc:'Cooks stew, herbal stew and porridge. Each food a race likes adds 2 resolve while any is in stock.'},
  stonecutter:{n:"Stonecutters' Camp",w:2,h:2,cost:{wood:10,planks:4},wk:2,kind:'gather',range:6,nodes:['stone'],fav:'dwarves',art:'camp',roof:'#6e7275',pile:'stone',desc:'Quarries stone outcrops within 6 tiles. Dwarves need stone for their halls, and bricks start here.'},
  harvester:{n:"Harvesters' Camp",w:2,h:2,cost:{wood:10,planks:4},wk:2,kind:'gather',range:6,nodes:['fibre'],fav:'elves',art:'camp',roof:'#8a8253',pile:'reeds',desc:'Cuts reed beds for plant fibre within 6 tiles. Fibre becomes fabric at the Crude Workstation.'},
  cottage:{n:'Human Cottage',w:2,h:2,cost:{planks:15},beds:4,race:0,art:'house',wall:'#a28f70',roof:'#8f5b3b',desc:'Proper housing for 4 Humans. Race housing adds up to 2 resolve.'},
@@ -404,11 +408,11 @@ function newGame(seed){
   R.s=seed|0;
   S={seed,t:0,tiles:new Uint8Array(N),old:new Uint8Array(N),fog:new Uint8Array(N),glade:new Int16Array(N).fill(-1),node:new Int16Array(N).fill(-1),occ:new Int32Array(N).fill(-1),road:new Uint8Array(N),claim:new Uint8Array(N),
     nodes:[],glades:[],buildings:[],nid:1,
-    stock:{wood:60,planks:10,stone:0,bricks:0,fibre:0,fabric:10,herbs:0,berries:30,mushrooms:0,roots:20,stew:0,herbalstew:0,porridge:0},
-    races:RACES.map(()=>({pop:4,acc:0,noFood:0,leave:0,res:0,terms:[],rate:0,homeless:0})),
+    stock:{wood:30,planks:6,stone:0,bricks:0,fibre:0,fabric:4,herbs:0,berries:30,mushrooms:0,roots:20,stew:0,herbalstew:0,porridge:0},
+    races:RACES.map(()=>({pop:3,acc:0,noFood:0,leave:0,res:0,terms:[],rate:0,homeless:0})),
     hearth:{fuel:BAL.fuelCap,level:1,rite:false},
     renown:0,patience:0,year:1,season:0,st:0,haul:[],trees:0,gladeIre:0,darkIre:0,darkT:0,chill:false,ire:0,ireLvl:0,ireTerms:[],takeT:0,
-    owned:[...STARTER],fresh:[],queue:[{k:'bp'},{k:'ch'}],charters:[],rp:0,ireAdj:0,pact:0,pactBroken:0,dwarfBonus:0,events:0,
+    req:[null,null,null],reqWait:[2,20,40],reqDone:0,owned:[...STARTER],fresh:[],queue:[{k:'bp'},{k:'ch'}],charters:[],rp:0,ireAdj:0,pact:0,pactBroken:0,dwarfBonus:0,events:0,
     stats:{trees:0,glades:0,meals:0,arrived:0,left:0,taken:0,events:0},tut:[0,0,0,0,0,0],alerts:[],over:null};
   genMap();
   addB('hearth',39,39,true);
@@ -600,9 +604,50 @@ function haul(g,a,b){const delay=(b.conn?1+b.dist*0.12:2+b.dist*0.35)*(has('swif
 function cut(i,b,elf){
   const x=i%MW,y=(i/MW)|0,old=S.old[i];
   S.tiles[i]=1;S.old[i]=0;S.claim[i]=0;S.trees++;S.stats.trees++;
-  const wa=(old?8:ri(3,5))+(has('thickBark')?2:0);fxTree(x,y,wa);dirtyT(x,y);reveal(x+.5,y+.5,elf?3:2);
+  const wa=(old?6:ri(2,4))+(has('thickBark')?2:0);fxTree(x,y,wa);dirtyT(x,y);reveal(x+.5,y+.5,elf?3:2);
   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const xx=x+dx,yy=y+dy;if(!inB(xx,yy))continue;const g=S.glade[idx(xx,yy)];if(g>=0&&!S.glades[g].open)openGlade(S.glades[g])}
   return wa;
+}
+/* ---------- Highhold requests ---------- */
+const REQ_NAMES={wood:'Timber for the walls',planks:'Planks for the shipyards',stone:'Stone for the high bastion',bricks:'Bricks for the Ember Gate',fibre:'Fibre for rope',fabric:'Sailcloth for the river barges',herbs:'Herbs for the infirmary',raw:'Provisions for the garrison',meals:'Hot meals for the Council',fuel:'Firewood for the Undying Hearth'};
+function reqGoods(){const g=['wood','planks','raw'];if(S.owned.includes('stonecutter'))g.push('stone','bricks');if(S.owned.includes('harvester'))g.push('fabric');if(S.stock.herbs>0||S.stats.glades>0)g.push('herbs');if(S.stats.meals>0||S.owned.includes('kitchen'))g.push('meals');return g}
+const BASEAMT={wood:40,planks:15,stone:20,bricks:12,fabric:12,herbs:15,raw:35,meals:15};
+function newRequest(slot){
+  const t=S.reqDone,goods=shuffle(reqGoods()),n=t>=2&&rnd()<.6?2:1,need={};
+  for(let k=0;k<n;k++){const g=goods[k];need[g]=Math.round(BASEAMT[g]*(1+0.3*t)*(n===2?.6:1)/5)*5||5}
+  const others=S.req.filter(Boolean).map(r=>r.rw.k);const poolLeft=POOL.some(k=>!S.owned.includes(k));
+  let opts=['villagers','renown','patience','goods','charter'];if(poolLeft)opts.push('bp','bp','bp');
+  if(poolLeft&&!others.includes('bp'))opts=['bp'];
+  let k=opts[ri(0,opts.length-1)];if(k==='charter'&&S.noCh)k='renown';
+  const rw={k};if(k==='villagers'){rw.r=ri(0,2);rw.n=3+Math.min(3,Math.floor(t/2))}if(k==='goods'){rw.g=['planks','bricks','fabric'][ri(0,2)];rw.n=20+5*t}
+  S.req[slot]={name:REQ_NAMES[Object.keys(need)[0]],need,rw};
+}
+function rwText(rw){return{bp:'Choose a new blueprint',villagers:`${rw.n} ${RACES[rw.r||0].n} join you`,renown:'Renown +1',patience:'The Crown\u2019s Patience −1',goods:`${rw.n} ${G[rw.g||'planks'][0].toLowerCase()} sent down the mountain`,charter:'Choose a new Charter'}[rw.k]}
+function reqHave(g){return g==='raw'?RAW.reduce((a,x)=>a+S.stock[x],0):g==='meals'?MEALS.reduce((a,x)=>a+S.stock[x],0):S.stock[g]}
+const reqName=g=>g==='raw'?'Raw food':g==='meals'?'Meals':G[g][0];
+function canSend(r){return r&&Object.entries(r.need).every(([g,a])=>reqHave(g)>=a)}
+function takeGood(g,a){if(g==='raw'||g==='meals'){const L=g==='raw'?RAW:MEALS;for(const x of [...L].sort((p,q)=>S.stock[q]-S.stock[p])){const t=Math.min(a,Math.floor(S.stock[x]));S.stock[x]-=t;a-=t;if(a<=0)break}}else S.stock[g]-=a}
+function sendRequest(i){
+  const r=S.req[i];if(!canSend(r))return;
+  for(const[g,a]of Object.entries(r.need))takeGood(g,a);
+  const rw=r.rw;
+  if(rw.k==='bp')S.queue.push({k:'bp'});else if(rw.k==='charter')S.queue.push({k:'ch'});
+  else if(rw.k==='villagers'){S.races[rw.r].pop+=rw.n;S.stats.arrived+=rw.n;fillAll()}
+  else if(rw.k==='renown')gainRenown(1);else if(rw.k==='patience')S.patience=Math.max(0,S.patience-1);
+  else if(rw.k==='goods')S.stock[rw.g]+=rw.n;
+  S.reqDone++;S.stats.sent=(S.stats.sent||0)+1;S.req[i]=null;S.reqWait[i]=45;
+  const st=S.buildings.find(b=>b.type==='store');if(st)fxBurst((st.x+1.5)*TS,(st.y+1.5)*TS,'#f4d27a',40);sfx('renown');ui.shake=3;
+  toast('The caravan climbs to Highhold. '+rwText(rw)+'.','good');closePanel();recompute();hud(true);
+}
+function tickRequests(dt){for(let i=0;i<3;i++){if(S.req[i])continue;S.reqWait[i]-=dt;if(S.reqWait[i]<=0){newRequest(i);if(S.t>5)toast('Highhold sends a new request: '+S.req[i].name.toLowerCase()+'.')}}}
+function pHighhold(){
+  let h=head('Highhold','The Crown\u2019s requests')+'<p class="desc">The capital asks for goods. Send what it wants and it rewards you: new blueprints, settlers, favour at court. Blueprints only come from here, so keep the caravans moving.</p>';
+  for(let i=0;i<3;i++){const r=S.req[i];
+    if(!r){h+=`<h3>Waiting for a messenger <small>${Math.ceil(S.reqWait[i])} s</small></h3>`;continue}
+    const ok=canSend(r);
+    h+=`<h3>${r.name}</h3><div class="rcrow">`+Object.entries(r.need).map(([g,a])=>{const have=Math.floor(reqHave(g));const col=g==='raw'?GC.berries:g==='meals'?GC.stew:GC[g];return`<span class="gch ${have<a?'miss':''}"><i style="background:${col}"></i>${reqName(g)} <em>${Math.min(have,a)} / ${a}</em></span>`}).join('')+`<span class="arw">→</span><span class="gch out">${rwText(r.rw)}</span></div><button class="btn ${ok?'main':''}" style="margin-top:8px;width:100%" data-act="send:${i}" ${ok?'':'disabled'}>${ok?'Send to Highhold':'Not enough yet'}</button>`}
+  h+=`<p class="note">Requests sent: ${S.reqDone}. Each one asks a little more than the last.</p>`;
+  return h;
 }
 function startTrip(b,j,load){j.trip=0;j.tt=tripTime(b);j.load=load}
 function deliver(l){S.stock[l.g]=(S.stock[l.g]||0)+l.a;const st=S.buildings.find(b=>b.type==='store'&&b.built);}
@@ -662,7 +707,7 @@ function take(){
 function seasonStart(){
   S.chill=false;
   if(S.season===1){
-    const n=ri(3,5)+(S.year>=3?1:0),got=[0,0,0];
+    const n=ri(2,4)+(S.year>=3?1:0),got=[0,0,0];
     for(let k=0;k<n;k++){const w=S.races.map(rc=>Math.max(1,rc.res));let roll=rnd()*w.reduce((a,b)=>a+b,0),r=0;while(roll>w[r]){roll-=w[r];r++}r=Math.min(r,2);S.races[r].pop++;got[r]++}
     S.stats.arrived+=n;fillAll();
     toast('Clearing. Settlers arrived: '+got.map((g,r)=>g?g+' '+(g>1?RACES[r].n:RACES[r].one):'').filter(Boolean).join(', ')+'.','good');
@@ -677,7 +722,8 @@ function tick(){
   if(S.st>=SEASONS[S.season].len){S.st-=SEASONS[S.season].len;S.season=(S.season+1)%3;if(S.season===0){S.year++;S.trees=0}seasonStart()}
   const temp=S.season===2;
   S.patience+=(BAL.patYear+(has('emberTithe')?0.25:0)+(has('ironWrit')?0.5:0))/YEAR*dt;
-  if(Math.floor(S.renown)>S.rp){S.rp++;S.queue.push({k:'bp'});ui.renownFx=1}
+  if(Math.floor(S.renown)>S.rp){S.rp++;ui.renownFx=1}
+  tickRequests(dt);
   S.hearth.fuel-=burnRate()*dt;
   if(S.hearth.rite){const need=0.1*dt;if(S.stock.wood>=need)S.stock.wood-=need;else{S.hearth.rite=false;toast('The Rite of Quiet ended: no wood left to burn.')}}
   while(S.hearth.fuel<=BAL.fuelCap-1&&S.stock.wood>=1){S.stock.wood-=1;S.hearth.fuel+=1}
@@ -775,6 +821,7 @@ function recompute(){
   if(temp){const cold=S.buildings.filter(b=>b.built&&BD[b.type].wk&&!b.warm&&b.workers.length);if(cold.length)A.push({k:'warn',t:`${cold.length} building${cold.length>1?'s':''} idle in the cold.`,b:cold[0].id})}
   for(const b of S.buildings)if(b.type==='site'&&b.opt==null){const e=EV[b.ev];A.unshift({k:e.k==='danger'?'bad':'warn',t:e.n+': '+(e.th?THREAT[e.th].replace(' while it stands',''):'awaiting your decision'),b:b.id});}
   if(S.queue.length&&!ui.pick)A.unshift({k:'good',t:'A choice is waiting.',act:'pick'});
+  if(S.req&&S.req.some(canSend))A.unshift({k:'good',t:'You can fill a Highhold request.',act:'high'});
   const idl=[0,1,2].reduce((a,r)=>a+Math.max(0,idle(r)),0);
   if(idl>0){const fb=S.buildings.find(b=>b.built&&BD[b.type].wk&&b.workers.length<BD[b.type].wk);A.push({k:'',t:`${idl} idle villager${idl>1?'s':''}.`+(fb?'':' Build a workplace.'),b:fb?fb.id:null})}
   let blocked=0;for(const b of S.buildings){if(blocked>=2)break;if(b.built&&BD[b.type].wk&&b.workers.length&&b.status&&/^(No |Waiting)/.test(b.status)){A.push({k:'',t:BD[b.type].n+': '+b.status.toLowerCase()+'.',b:b.id});blocked++}}
@@ -789,7 +836,7 @@ function checkEnd(){
 }
 
 /* ================= save ================= */
-const SKEY='longrain.m1c.save',TA={tiles:Uint8Array,old:Uint8Array,fog:Uint8Array,glade:Int16Array,node:Int16Array,occ:Int32Array,road:Uint8Array,claim:Uint8Array};
+const SKEY='longrain.m1d.save',TA={tiles:Uint8Array,old:Uint8Array,fog:Uint8Array,glade:Int16Array,node:Int16Array,occ:Int32Array,road:Uint8Array,claim:Uint8Array};
 function save(){if(!S||S.over)return;try{const o={...S};delete o.connRoad;for(const k in TA)o[k]=Array.from(S[k]);localStorage.setItem(SKEY,JSON.stringify({v:1,s:o,r:R.s,cam:{x:cam.x,y:cam.y,z:cam.z}}))}catch(e){}}
 function load(){try{const raw=localStorage.getItem(SKEY);if(!raw)return false;const d=JSON.parse(raw);const o=d.s;for(const k in TA)o[k]=TA[k].from(o[k]);S=o;R.s=d.r;if(d.cam)Object.assign(cam,d.cam);return true}catch(e){return false}}
 const hasSave=()=>{try{return!!localStorage.getItem(SKEY)}catch(e){return false}};
@@ -1247,7 +1294,7 @@ function pYear(){
 function pRenown(){
   let h=head('Renown and Patience','The Crown is watching')+`<p class="desc">Win when Renown reaches 12. Lose when the Crown’s Patience reaches 12 first.</p>`;
   h+=`<h3>Renown <small>${S.renown.toFixed(2)} of 12</small></h3><table class="tbl">`+S.races.map((rc,r)=>`<tr><td>${RACES[r].n}: resolve ${rc.res.toFixed(1)}, ${rc.pop} villagers</td><td class="${rc.rate>0?'pos':''}">${rc.rate>0?'+'+rc.rate.toFixed(2)+'/min':'—'}</td></tr>`).join('')+'</table>';
-  h+=`<p class="note">A race earns Renown while its resolve is ${BAL.thr} or more. Higher resolve and more villagers (up to 20) earn faster. Each Great Hearth level also gives 1.</p>`;
+  h+=`<p class="note">A race earns Renown while its resolve is ${BAL.thr} or more. Higher resolve and more villagers (up to 20) earn faster. Each Great Hearth level also gives 1, and so can Highhold requests and glade events.</p>`;
   h+=`<h3>Patience <small>${S.patience.toFixed(2)} of 12</small></h3><p class="note">Rises by ${BAL.patYear} a year, by 0.5 when a villager gives up and leaves, and by 1 when the wood takes one.</p>`;
   return h;
 }
@@ -1264,7 +1311,7 @@ function renderPanel(force){
   const p=$('#panel');if(!ui.panel||!S)return;if(ui.touching&&!force)return;
   const {k,id}=ui.panel;let h='';
   if(k==='b'){const b=byId(id);if(!b)return closePanel();h=pBuilding(b)}
-  else if(k==='race')h=pRace(id);else if(k==='ire')h=pIre();else if(k==='year')h=pYear();else if(k==='renown')h=pRenown();else if(k==='store')h=pStore();else if(k==='node')h=pNode(id);else if(k==='glade')h=pGlade(id);else if(k==='menu')h=pMenu();
+  else if(k==='race')h=pRace(id);else if(k==='ire')h=pIre();else if(k==='year')h=pYear();else if(k==='renown')h=pRenown();else if(k==='store')h=pStore();else if(k==='high')h=pHighhold();else if(k==='node')h=pNode(id);else if(k==='glade')h=pGlade(id);else if(k==='menu')h=pMenu();
   setHTML(p,h);
 }
 let lastSpeed='';
@@ -1282,6 +1329,7 @@ function hud(force){
   const fs=fuelSecs(),raw=RAW.reduce((a,g)=>a+S.stock[g],0),meals=MEALS.reduce((a,g)=>a+S.stock[g],0);
   const res=[['wood',S.stock.wood,'wood'],['planks',S.stock.planks,'planks'],['stone',S.stock.stone,'stone'],['bricks',S.stock.bricks,'bricks'],['fibre',S.stock.fibre,'fibre'],['fabric',S.stock.fabric,'fabric'],['herbs',S.stock.herbs,'herbs'],['berries',raw,'raw food'],['stew',meals,'meals']];
   setHTML($('#res'),res.map(([g,v,l])=>`<span class="r"><i style="background:${GC[g]}"></i><b>${Math.floor(v)}</b><small>${l}</small></span>`).join('')+`<span class="r ${fs<90?'low':''}"><i style="background:var(--ember);border-radius:50%"></i><b>${mmss(fs)}</b><small>fuel</small></span>`);
+  {const ready=S.req.filter(canSend).length;const hb=$('#highBtn');hb.classList.toggle('ready',ready>0);setHTML(hb,`<b>Highhold</b><small>${ready?ready+' request'+(ready>1?'s':'')+' ready to send':S.req.filter(Boolean).length+' requests open'}</small>`)}
   setHTML($('#races'),S.races.map((rc,r)=>{const RR=RACES[r],cls=rc.res>=BAL.thr?'ok':rc.res<=3?'bad':'';
     return`<button class="race glass" data-act="race:${r}" style="--c:${RR.c}"><span class="por">${RR.n[0]}</span><span class="rn">${RR.n}<small>${rc.pop} · ${Math.max(0,idle(r))} idle</small></span><span class="rv ${cls}">${Math.round(rc.res)}</span><span class="rbar"><i style="width:${Math.max(0,Math.min(100,rc.res/24*100))}%"></i><em style="left:${BAL.thr/24*100}%"></em></span>${rc.leave>0?`<span class="warnline">Leaving in ${Math.ceil(BAL.leave-rc.leave)} s</span>`:''}</button>`}).join(''));
   const cur=S.tut.findIndex(v=>!v);
@@ -1312,7 +1360,8 @@ function act(a,p1,p2){
     case 'speed':ui.speed=+p1;break;
     case 'race':openPanel('race',+p1);break;
     case 'open':openPanel('b',+p1);break;
-    case 'ire':case 'year':case 'renown':case 'store':case 'menu':openPanel(a);break;
+    case 'ire':case 'year':case 'renown':case 'store':case 'menu':case 'high':openPanel(a);break;
+    case 'send':sendRequest(+p1);break;
     case 'close':closePanel();break;
     case 'as':{const b=byId(+p1),r=+p2;if(b&&idle(r)>0&&b.workers.length<BD[b.type].wk){b.workers.push(r);b.jobs.push(null)}break}
     case 'un':{const b=byId(+p1),i=+p2;if(b&&b.workers[i]!=null){releaseJob(b.jobs[i]);b.workers.splice(i,1);b.jobs.splice(i,1)}break}
@@ -1366,7 +1415,7 @@ function frame(now){
   const rdt=Math.min(0.1,(now-last)/1000);last=now;
   if(S&&!S.over&&ui.speed>0){acc+=rdt*ui.speed;let n=0;while(acc>=TICK&&n<40){tick();acc-=TICK;n++;if(S.over)break}if(n>=40)acc=0}
   if(AU.rain){const tgt=AU.on?(S?[.05,.025,.11][S.season]:.04):0;AU.rain.gain.value+=(tgt-AU.rain.gain.value)*Math.min(1,rdt*2)}
-  if(S&&ui.renownFx){ui.renownFx=0;const hb=S.buildings.find(b=>b.type==='hearth');if(hb)fxBurst((hb.x+1.5)*TS,(hb.y+1.5)*TS,'#f4d27a',60);sfx('renown');toast('Renown '+Math.floor(S.renown)+'. A new blueprint is yours to choose.','good');const bb=$('#bars');bb.classList.add('glow');setTimeout(()=>bb.classList.remove('glow'),1600)}
+  if(S&&ui.renownFx){ui.renownFx=0;const hb=S.buildings.find(b=>b.type==='hearth');if(hb)fxBurst((hb.x+1.5)*TS,(hb.y+1.5)*TS,'#f4d27a',60);sfx('renown');toast('Renown '+Math.floor(S.renown)+' of 12. The Crown takes notice.','good');const bb=$('#bars');bb.classList.add('glow');setTimeout(()=>bb.classList.remove('glow'),1600)}
   if(S&&!S.over&&S.queue.length&&!ui.pick&&!ui.ghost)showPick();
   if(S){flush();draw(now/1000,rdt);hudT+=rdt;panT+=rdt;if(hudT>0.25){hudT=0;hud()}if(panT>0.6){panT=0;renderPanel()}}
   else draw(now/1000,rdt);
@@ -1380,7 +1429,7 @@ window.__lr={get S(){return S},ui,tick,newGame,startNew,act,recompute,canPlace,p
 <div id="updBar" class="glass" hidden style="position:fixed;z-index:20;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;gap:12px;align-items:center;padding:10px 12px 10px 16px;max-width:calc(100% - 32px)"><span>A new version of The Long Rain is ready.</span><button class="btn main" onclick="try{window.__lr&&window.__lr.S&&window.__lr.save&&window.__lr.save()}catch(e){};location.reload()">Update now</button></div>
 <div id="installHint" class="ov" hidden><div class="card glass"><h1 style="font-size:34px">Install on your iPad</h1><p class="lede">Tap the Share button in Safari, then <b>Add to Home Screen</b>. The Long Rain then opens full screen and works offline.</p><div class="row"><button class="btn main" id="hintOk">Got it</button></div></div></div>
 <script>
-const LR_VERSION='M1.7';
+const LR_VERSION='M1.8';
 if('serviceWorker' in navigator){addEventListener('load',()=>{
   navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{
     const check=()=>r.update().catch(()=>{});check();
