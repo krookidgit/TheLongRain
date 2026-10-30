@@ -243,7 +243,6 @@ body.panel-open #alerts{display:none}
       <h1><span>Milestone 1 · Hearth</span>The Long Rain</h1>
       <p class="lede">The sky broke three hundred years ago. Carry an ember of the Undying Hearth into the Wyldwood, keep three peoples content, and win the Crown's favour before its patience runs out.</p>
       <div class="row"><button class="btn main" data-act="new">Found a settlement</button><button class="btn" data-act="continue" id="contBtn" hidden>Continue</button></div>
-      <small id="verTag" style="color:var(--faint)"></small>
       <label class="seed">Seed <input id="seedIn" inputmode="numeric" placeholder="random" autocomplete="off"></label>
       <ul class="how">
         <li>Drag to pan, pinch to zoom, tap anything to inspect it.</li>
@@ -850,6 +849,26 @@ function drawBuilding(b,t,ghost){
   let popped=false;if(b.pop&&!ghost){const a=(performance.now()-b.pop)/450;if(a<1){popped=true;const k=1+Math.sin(a*Math.PI)*0.16*(1-a);ctx.save();ctx.translate(x+w/2,y+h);ctx.scale(1/k*1.0+ (k-1)*0.4,k);ctx.translate(-(x+w/2),-(y+h))}else b.pop=0}
   drawBuilding2(b,t,ghost,d,x,y,w,h);if(popped)ctx.restore();
 }
+function nodeVisible(n){const i=idx(n.x,n.y);if(S.fog[i]<1||n.c<=0)return false;const gi=S.glade[i];return gi<0||S.glades[gi].open}
+function inReach(b,x,y,r){const c=bc(b);return Math.max(Math.abs(x+.5-c.x),Math.abs(y+.5-c.y))<=r}
+function reachInfo(b){const d=BD[b.type];if(d.nodes){const o={};for(const n of S.nodes)if(d.nodes.includes(n.t)&&nodeVisible(n)&&inReach(b,n.x,n.y,d.range))o[n.t]=(o[n.t]||0)+1;return o}return null}
+function highlightFor(b,t,isGhost){
+  const d=BD[b.type],p=.55+.45*Math.sin(t*4);
+  if(d.nodes){
+    for(const n of S.nodes){if(!d.nodes.includes(n.t)||!nodeVisible(n))continue;
+      const near=inReach(b,n.x,n.y,d.range),cx=(n.x+.5)*TS,cy=(n.y+.5)*TS,col=GC[n.t];
+      ctx.globalCompositeOperation='lighter';const gr=ctx.createRadialGradient(cx,cy,2,cx,cy,near?26:20);gr.addColorStop(0,col+(near?'cc':'66'));gr.addColorStop(1,col+'00');ctx.fillStyle=gr;ctx.globalAlpha=near?.6+.4*p:.45;ctx.beginPath();ctx.arc(cx,cy,near?26:20,0,7);ctx.fill();ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+      ctx.strokeStyle=near?'#fff6dc':col;ctx.globalAlpha=near?.95:.6;ctx.lineWidth=near?2:1.4;ctx.beginPath();ctx.arc(cx,cy,near?14+p*2:12,0,7);ctx.stroke();ctx.globalAlpha=1;
+      if(near&&cam.z>=0.8){ctx.font='700 8px Alegreya Sans, sans-serif';ctx.textAlign='center';ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillText(n.c,cx+.6,cy-17.4);ctx.fillStyle='#fff6dc';ctx.fillText(n.c,cx,cy-18)}
+      if(near){ctx.setLineDash([3,4]);ctx.strokeStyle='rgba(255,246,220,.35)';ctx.lineWidth=1;ctx.beginPath();const c=bc(b);ctx.moveTo(c.x*TS,c.y*TS);ctx.lineTo(cx,cy);ctx.stroke();ctx.setLineDash([])}
+    }
+  }else if(d.kind==='cut'||d.needForest){
+    const c=bc(b),R=d.kind==='cut'?d.range:1.5;
+    for(let y=Math.max(0,Math.floor(c.y-R));y<=Math.min(MH-1,Math.ceil(c.y+R)-1);y++)for(let x=Math.max(0,Math.floor(c.x-R));x<=Math.min(MW-1,Math.ceil(c.x+R)-1);x++){const i=idx(x,y);if(S.tiles[i]!==0||S.fog[i]!==2)continue;
+      if(!((x>0&&S.tiles[i-1]!==0)||(x<MW-1&&S.tiles[i+1]!==0)||(y>0&&S.tiles[i-MW]!==0)||(y<MH-1&&S.tiles[i+MW]!==0)))continue;
+      ctx.fillStyle=`rgba(190,230,140,${.22+.18*p})`;ctx.fillRect(x*TS+3,y*TS+3,TS-6,TS-6)}
+  }
+}
 function drawSite(b,t){
   const e=EV[b.ev],[,col]=EVKIND[e.k],cx=(b.x+.5)*TS,cy=(b.y+.5)*TS,p=.5+.5*Math.sin(t*3+b.id);
   ctx.globalCompositeOperation='lighter';const gr=ctx.createRadialGradient(cx,cy,2,cx,cy,30);gr.addColorStop(0,col+'aa');gr.addColorStop(1,col+'00');ctx.fillStyle=gr;ctx.globalAlpha=.5+.4*p;ctx.beginPath();ctx.arc(cx,cy,30,0,7);ctx.fill();ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
@@ -990,6 +1009,8 @@ function draw(t,rdt){
   drawFx(rdt);
   if(sel){ctx.strokeStyle='#e9a24c';ctx.lineWidth=2;rr(ctx,sel.x*TS-2,sel.y*TS-2,sel.w*TS+4,sel.h*TS+4,7);ctx.stroke()}
   const g=ui.ghost;
+  { const hb=g&&g.type!=='road'?{type:g.type,x:g.x,y:g.y,w:BD[g.type].w,h:BD[g.type].h}:(sel&&BD[sel.type].nodes?sel:null);
+    if(hb)highlightFor(hb,t,!!g); }
   if(g&&g.type!=='road'){const d=BD[g.type],why=canPlace(g.type,g.x,g.y),ok=!why||why.startsWith('Not enough');
     ring(g.type,g.x,g.y,d.w,d.h);
     ctx.globalAlpha=.7;drawBuilding({type:g.type,x:g.x,y:g.y,w:d.w,h:d.h,built:true,workers:[],warm:true,id:0},t,true);ctx.globalAlpha=1;
@@ -1066,7 +1087,10 @@ function toast(msg,k){const box=$('#toasts');if(!box)return;const el=document.cr
 function enterGhost(type){
   closePanel();
   if(type==='road'){ui.ghost={type};ghostBar();return}
-  const d=BD[type],c=s2t(VW/2,VH/2);ui.ghost={type,x:c.x-Math.floor((d.w-1)/2),y:c.y-Math.floor((d.h-1)/2)};ghostBar();
+  const d=BD[type],c=s2t(VW/2,VH/2);let gx=c.x-Math.floor((d.w-1)/2),gy=c.y-Math.floor((d.h-1)/2);
+  const ok=(x,y)=>{const w=canPlace(type,x,y);return !w||w.startsWith('Not enough')};
+  outer:for(let r=0;r<14;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;if(ok(gx+dx,gy+dy)){gx+=dx;gy+=dy;break outer}}
+  ui.ghost={type,x:gx,y:gy};ghostBar();
 }
 function exitGhost(){ui.ghost=null;ghostBar()}
 function placeGhost(){
@@ -1080,7 +1104,8 @@ function ghostBar(){
   if(g.type==='road'){setHTML(el,`<div class="gt"><b>Paint roads</b><small>Drag along cleared ground, 1 wood a tile. Two fingers to pan.</small></div><button class="btn main" data-act="gno">Done</button>`);return}
   const why=canPlace(g.type,g.x,g.y);let soft='';
   if(!why&&d.kind==='cut'&&findTree({type:g.type,x:g.x,y:g.y,w:d.w,h:d.h})<0)soft='No forest edge within 8 tiles. Move it closer to the trees.';
-  setHTML(el,`<div class="gt"><b>${d.n}</b><small class="${why||soft?'bad':''}">${why?esc(why):soft||'Cost: '+costStr(d.cost)+'. Tap or drag to move.'}</small></div><button class="btn" data-act="gno">Cancel</button><button class="btn main" data-act="gok" ${why?'disabled':''}>Build</button>`);
+  let reach='';if(d.nodes){const o=reachInfo({type:g.type,x:g.x,y:g.y,w:d.w,h:d.h});const ks=Object.keys(o);if(!why&&!ks.length)soft='Nothing to harvest in reach. Move it toward a glowing node.';else reach=' In reach: '+ks.map(k=>o[k]+' '+G[k][0].toLowerCase()).join(', ')+'.'}
+  setHTML(el,`<div class="gt"><b>${d.n}</b><small class="${why||soft?'bad':''}">${why?esc(why):soft||'Cost: '+costStr(d.cost)+'.'+reach+' Tap or drag to move.'}</small></div><button class="btn" data-act="gno">Cancel</button><button class="btn main" data-act="gok" ${why?'disabled':''}>Build</button>`);
 }
 function showPick(){
   const q=S.queue[0];if(!q)return;
@@ -1315,7 +1340,7 @@ window.__lr={get S(){return S},ui,tick,newGame,startNew,act,recompute,canPlace,p
 <div id="updBar" class="glass" hidden style="position:fixed;z-index:20;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;gap:12px;align-items:center;padding:10px 12px 10px 16px;max-width:calc(100% - 32px)"><span>A new version of The Long Rain is ready.</span><button class="btn main" onclick="try{window.__lr&&window.__lr.S&&window.__lr.save&&window.__lr.save()}catch(e){};location.reload()">Update now</button></div>
 <div id="installHint" class="ov" hidden><div class="card glass"><h1 style="font-size:34px">Install on your iPad</h1><p class="lede">Tap the Share button in Safari, then <b>Add to Home Screen</b>. The Long Rain then opens full screen and works offline.</p><div class="row"><button class="btn main" id="hintOk">Got it</button></div></div></div>
 <script>
-const LR_VERSION='M1.5';
+const LR_VERSION='M1.6';
 if('serviceWorker' in navigator){addEventListener('load',()=>{
   navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{
     const check=()=>r.update().catch(()=>{});check();
