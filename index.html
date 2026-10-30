@@ -217,6 +217,7 @@ body.panel-open #alerts{display:none}
       <h1><span>Milestone 1 · Hearth</span>The Long Rain</h1>
       <p class="lede">The sky broke three hundred years ago. Carry an ember of the Undying Hearth into the Wyldwood, keep three peoples content, and win the Crown's favour before its patience runs out.</p>
       <div class="row"><button class="btn main" data-act="new">Found a settlement</button><button class="btn" data-act="continue" id="contBtn" hidden>Continue</button></div>
+      <small id="verTag" style="color:var(--faint)"></small>
       <label class="seed">Seed <input id="seedIn" inputmode="numeric" placeholder="random" autocomplete="off"></label>
       <ul class="how">
         <li>Drag to pan, pinch to zoom, tap anything to inspect it.</li>
@@ -1090,13 +1091,23 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__lr={get S(){return S},ui,tick,newGame,startNew,act,recompute,canPlace,placeGhost,placeRoad};
+window.__lr={get S(){return S},ui,tick,newGame,startNew,act,recompute,canPlace,placeGhost,placeRoad,save};
 })();
 </script>
 
+<div id="updBar" class="glass" hidden style="position:fixed;z-index:20;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;gap:12px;align-items:center;padding:10px 12px 10px 16px;max-width:calc(100% - 32px)"><span>A new version of The Long Rain is ready.</span><button class="btn main" onclick="try{window.__lr&&window.__lr.S&&window.__lr.save&&window.__lr.save()}catch(e){};location.reload()">Update now</button></div>
 <div id="installHint" class="ov" hidden><div class="card glass"><h1 style="font-size:34px">Install on your iPad</h1><p class="lede">Tap the Share button in Safari, then <b>Add to Home Screen</b>. The Long Rain then opens full screen and works offline.</p><div class="row"><button class="btn main" id="hintOk">Got it</button></div></div></div>
 <script>
-if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').then(r=>{r.addEventListener('updatefound',()=>{const w=r.installing;w&&w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller){const t=document.createElement('div');t.className='toast glass';t.textContent='A new version is ready. Close and reopen the app to update.';const box=document.getElementById('toasts');if(box)box.appendChild(t)}})})}).catch(()=>{})})}
+const LR_VERSION='M1.4';
+if('serviceWorker' in navigator){addEventListener('load',()=>{
+  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{
+    const check=()=>r.update().catch(()=>{});check();
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)check()});
+    const show=()=>{const u=document.getElementById('updBar');if(u)u.hidden=false};
+    if(r.waiting&&navigator.serviceWorker.controller)show();
+    r.addEventListener('updatefound',()=>{const w=r.installing;w&&w.addEventListener('statechange',()=>{if((w.state==='installed'||w.state==='activated')&&navigator.serviceWorker.controller)show()})});
+  }).catch(()=>{})})}
+document.addEventListener('DOMContentLoaded',()=>{const v=document.getElementById('verTag');if(v)v.textContent='Version '+LR_VERSION});
 (()=>{const standalone=navigator.standalone||matchMedia('(display-mode: standalone)').matches;const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);let seen=false;try{seen=localStorage.getItem('longrain.hint')}catch(e){}if(ios&&!standalone&&!seen){const h=document.getElementById('installHint');h.hidden=false;document.getElementById('hintOk').onclick=()=>{h.hidden=true;try{localStorage.setItem('longrain.hint','1')}catch(e){}}}})();
 </script>
 </body>
