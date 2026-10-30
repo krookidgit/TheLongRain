@@ -189,6 +189,21 @@ body.panel-open #alerts{display:none}
 .evopt b{font-size:15px}.evopt small{font-size:12.5px}
 .evopt .gain{color:#bfe39c}.evopt .loss{color:#eba293}
 .threat{padding:8px 10px;border-radius:8px;background:rgba(199,90,75,.14);border:1px solid #7a3a33;color:#f0b3a8;font-size:13.5px;margin:6px 0}
+/* recipe chips */
+.rcrow{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:4px}
+.gch{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line2);font-size:12.5px;white-space:nowrap}
+.gch i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.gch em{font-style:normal;font-weight:700;font-variant-numeric:tabular-nums}
+.gch.miss{border-color:#7a3a33;color:#eba293}.gch.miss em{color:#eba293}
+.gch.out{border-color:var(--ember);background:rgba(233,162,76,.12)}
+.alt{display:inline-flex;align-items:center;gap:3px;padding:2px;border-radius:16px;border:1px dashed var(--line2)}
+.alt>span.o{font-size:11px;color:var(--faint);padding:0 1px}
+.arw{color:var(--dim);font-size:14px;padding:0 2px}
+.op{color:var(--faint);font-weight:700}
+.trip{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:13px;margin:6px 0;color:var(--dim)}
+.trip b{color:var(--ink);font-variant-numeric:tabular-nums}
+.gtbl td:first-child{white-space:nowrap}
+.gtbl td small{display:block;font-size:11.5px;color:var(--faint);font-weight:400}
 /* toasts */
 #toasts{position:absolute;top:calc(var(--st) + 100px);left:50%;transform:translateX(-50%);display:grid;gap:6px;justify-items:center;pointer-events:none;width:min(520px,calc(100% - 32px));z-index:4}
 .toast{padding:8px 14px;font-size:14px;text-align:center;animation:tin .25s ease-out}
@@ -482,7 +497,7 @@ function fillB(b){
   }
 }
 function fillAll(){for(const b of S.buildings)if(b.built)fillB(b)}
-function releaseJob(j){if(j&&j.tg>=0&&j.kind==='cut')S.claim[j.tg]=0}
+function releaseJob(j){if(!j)return;if(j.tg>=0&&j.kind==='cut')S.claim[j.tg]=0;if(j.load){S.stock[j.load.g]+=j.load.a;j.load=null}if(j.carry&&j.cg){S.stock[j.cg]+=j.carry;j.carry=0}}
 function canPlace(type,x,y){
   const d=BD[type];
   for(let yy=y;yy<y+d.h;yy++)for(let xx=x;xx<x+d.w;xx++){
@@ -566,15 +581,31 @@ function pickInputs(rc){
   return out;
 }
 const has=k=>S.charters.includes(k);
+const tripTime=b=>(b.conn?1.5+b.dist*0.32:3+b.dist*0.6)*(has('swiftHaulers')?0.6:1);
+function gchip(g,n,cls){return`<span class="gch ${cls||''}"><i style="background:${GC[g]}"></i>${G[g][0]}${n!=null?` <em>${n}</em>`:''}</span>`}
+function recipeHTML(rc,showStock){
+  const ins=rc.in.map(slot=>{const parts=slot.map(g=>{const have=Math.floor(S.stock[g]);return gchip(g,showStock?have:null,showStock&&have<1?'miss':'')});
+    return slot.length>1?`<span class="alt">${parts.join('<span class="o">or</span>')}</span>`:parts[0]}).join('<span class="op">+</span>');
+  return`<span class="rcrow">${ins}<span class="arw">→</span>${gchip(rc.out,'×'+STAR_OUT[rc.st],'out')}</span>`;
+}
+const MADE_BY={},USED_IN={};
+(()=>{for(const[k,d]of Object.entries(BD)){if(d.nodes)for(const g of d.nodes)(MADE_BY[g]=MADE_BY[g]||[]).push(d.n);if(d.kind==='cut')(MADE_BY.wood=MADE_BY.wood||[]).push(d.n);if(d.recipes)for(const r of d.recipes){const rc=RC[r];(MADE_BY[rc.out]=MADE_BY[rc.out]||[]).push(d.n);for(const slot of rc.in)for(const g of slot)(USED_IN[g]=USED_IN[g]||[]).push(rc.n+' at '+d.n)}}
+  for(const[k,d]of Object.entries(BD))for(const g of Object.keys(d.cost||{}))(USED_IN[g]=USED_IN[g]||[]).push('building '+d.n);
+  for(const r of RACES)for(const g of r.likes)(USED_IN[g]=USED_IN[g]||[]).push(r.n+' love it');
+  for(const g of RAW)(USED_IN[g]=USED_IN[g]||[]).push('eaten raw');
+  (USED_IN.wood=USED_IN.wood||[]).unshift('hearth fuel')})();
 function add(o){for(const[k,a]of Object.entries(o))S.stock[k]=(S.stock[k]||0)+a}
 function gainRenown(n){S.renown+=n+(has('ironWrit')&&n>0?1:0)}
 function haul(g,a,b){const delay=(b.conn?1+b.dist*0.12:2+b.dist*0.35)*(has('swiftHaulers')?0.5:1);S.haul.push({g,a,at:S.t+delay})}
 function cut(i,b,elf){
   const x=i%MW,y=(i/MW)|0,old=S.old[i];
   S.tiles[i]=1;S.old[i]=0;S.claim[i]=0;S.trees++;S.stats.trees++;
-  const wa=(old?8:ri(3,5))+(has('thickBark')?2:0);haul('wood',wa,b);fxTree(x,y,wa);dirtyT(x,y);reveal(x+.5,y+.5,elf?3:2);
+  const wa=(old?8:ri(3,5))+(has('thickBark')?2:0);fxTree(x,y,wa);dirtyT(x,y);reveal(x+.5,y+.5,elf?3:2);
   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const xx=x+dx,yy=y+dy;if(!inB(xx,yy))continue;const g=S.glade[idx(xx,yy)];if(g>=0&&!S.glades[g].open)openGlade(S.glades[g])}
+  return wa;
 }
+function startTrip(b,j,load){j.trip=0;j.tt=tripTime(b);j.load=load}
+function deliver(l){S.stock[l.g]=(S.stock[l.g]||0)+l.a;const st=S.buildings.find(b=>b.type==='store'&&b.built);}
 function work(b,d,dt,temp){
   if(d.kind==='event'){
     if(b.opt==null){b.status='Awaiting your decision';return}
@@ -589,17 +620,21 @@ function work(b,d,dt,temp){
   for(let i=0;i<b.workers.length;i++){
     const f=d.fav===RACES[b.workers[i]].key?1.25:1;
     let j=b.jobs[i];if(!j)j=b.jobs[i]={kind:d.kind,p:0,tg:-1,on:false};
+    if(j.trip!=null){j.trip+=dt*sp;
+      if(j.load&&j.trip>=j.tt/2){deliver(j.load);j.load=null}
+      if(j.trip<j.tt){st=j.load?'Carrying '+G[j.load.g][0].toLowerCase()+' to the Storehouse':'Walking back from the Storehouse';if(d.kind==='make')st='Fetching '+j.fetchN+' from the Storehouse';continue}
+      j.trip=null;if(d.kind==='make'){j.on=true;j.p=0}}
     if(d.kind==='cut'){
       if(j.tg<0||S.tiles[j.tg]!==0){if(j.tg>=0)S.claim[j.tg]=0;j.tg=findTree(b);j.p=0;if(j.tg<0){st='No trees left in reach';continue}S.claim[j.tg]=1}
-      j.p+=dt*sp*f;if(j.p>=BAL.cutT*(S.old[j.tg]?2:1)){cut(j.tg,b,b.workers[i]===2);j.tg=-1;j.p=0}
+      j.p+=dt*sp*f;if(j.p>=BAL.cutT*(S.old[j.tg]?2:1)){const wa=cut(j.tg,b,b.workers[i]===2);j.tg=-1;j.p=0;startTrip(b,j,{g:'wood',a:wa})}
     }else if(d.kind==='gather'){
       let n=j.tg>=0?S.nodes[j.tg]:null;
       if(!n||n.c<=0){j.tg=findNode(b);j.p=0;if(j.tg<0){st='No resource nodes in reach';continue}n=S.nodes[j.tg]}
       j.p+=dt*sp*f;
-      if(j.p>=BAL.gatherT){j.p=0;n.c-=1;haul(n.t,1,b);popText((n.x+.5)*TS,n.y*TS,'+1 '+G[n.t][1],GC[n.t]);if(n.c<=0){S.node[idx(n.x,n.y)]=-1;dirtyT(n.x,n.y);toast(G[n.t][0]+' node used up.')}}
+      if(j.p>=BAL.gatherT){j.p=0;n.c-=1;j.carry=(j.carry||0)+1;j.cg=n.t;popText((n.x+.5)*TS,n.y*TS,'+1 '+G[n.t][1],GC[n.t]);if(n.c<=0){S.node[idx(n.x,n.y)]=-1;dirtyT(n.x,n.y);toast(G[n.t][0]+' node used up.')}if(j.carry>=3||n.c<=0){startTrip(b,j,{g:j.cg,a:j.carry});j.carry=0}}
     }else{
       const rc=RC[b.recipe];
-      if(!j.on){const pick=pickInputs(rc);if(!pick){st='Waiting for '+rc.in.map(s=>s.map(g=>G[g][0].toLowerCase()).join(' or ')).join(' and ');continue}for(const g of pick)S.stock[g]-=1;j.on=true;j.p=0}
+      if(!j.on){const pick=pickInputs(rc);if(!pick){st='Waiting for '+rc.in.map(s=>s.map(g=>G[g][0].toLowerCase()).join(' or ')).join(' and ');continue}for(const g of pick)S.stock[g]-=1;j.fetchN=pick.map(g=>G[g][0].toLowerCase()).join(' and ');startTrip(b,j,null);continue}
       j.p+=dt*sp*f;
       if(j.p>=BAL.cycle){j.on=false;j.p=0;b.acc+=STAR_OUT[rc.st];const k=Math.floor(b.acc+1e-9);if(k>0){b.acc-=k;haul(rc.out,k,b);popText((b.x+b.w/2)*TS,b.y*TS,'+'+k+' '+G[rc.out][1],GC[rc.out]);if(MEALS.includes(rc.out))S.stats.meals+=k}}
     }
@@ -927,25 +962,25 @@ function drawBuilding2(b,t,ghost,d,x,y,w,h){
   if(cam.z>=1.45&&!ghost){ctx.font='600 8px Alegreya Sans, sans-serif';ctx.textAlign='center';ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillText(d.n,x+w/2+.6,y+h+9.6);ctx.fillStyle='#ece3cc';ctx.fillText(d.n,x+w/2,y+h+9)}
 }
 function walkers(t){
-  const out=[],stores=S.buildings.filter(b=>b.type==='store'&&b.built);
+  const out=[],stores=S.buildings.filter(b=>b.type==='store'&&b.built),an=Math.floor(t*Math.max(1,ui.speed)/0.16)%4;
+  const nearStore=b=>{let best=null,bd=1e9;const c=bc(b);for(const s of stores){const sc=bc(s),d=Math.abs(c.x-sc.x)+Math.abs(c.y-sc.y);if(d<bd){bd=d;best=s}}return best};
+  const dirOf=(dx,dy)=>Math.abs(dx)>Math.abs(dy)?(dx<0?2:3):(dy<0?1:0);
   for(const b of S.buildings){if(!b.built||!b.workers.length)continue;const d=BD[b.type];
-    const ax=(b.x+b.w/2)*TS,ay=(b.y+b.h)*TS+2;
+    const ax=(b.x+b.w/2)*TS,ay=(b.y+b.h)*TS+2,st=nearStore(b);
     for(let k=0;k<b.workers.length;k++){
-      const j=b.jobs[k];let bx,by;
-      if(j&&j.tg>=0&&d.kind==='cut'){bx=(j.tg%MW+.5)*TS;by=(((j.tg/MW)|0)+1)*TS}
-      else if(j&&j.tg>=0&&d.kind==='gather'){const n=S.nodes[j.tg];if(!n)continue;bx=(n.x+.5)*TS;by=(n.y+1)*TS}
-      else if(d.kind==='make'&&stores.length){const s=stores[0];bx=(s.x+s.w/2+(k-.5)*.6)*TS;by=(s.y+s.h)*TS+4}
-      else{bx=ax+(k-1)*10;by=ay+6}
-      const dist=Math.hypot(bx-ax,by-ay);
-      if(b.status!=='Working'||dist<8||(S.season===2&&!b.warm)){out.push({x:ax+(k-1)*9,y:ay+4,dir:0,f:0,r:b.workers[k]});continue}
-      const per=dist/22,ph=((t*Math.max(1,ui.speed)/per)+hh(b.id,k))%2,u=ph<1?ph:2-ph,fw=ph<1;
-      const x=ax+(bx-ax)*u,y=ay+(by-ay)*u,dx=(bx-ax)*(fw?1:-1),dy=(by-ay)*(fw?1:-1);
-      const dir=Math.abs(dx)>Math.abs(dy)?(dx<0?2:3):(dy<0?1:0);
-      out.push({x,y,dir,f:Math.floor(t*Math.max(1,ui.speed)/0.16)%4,r:b.workers[k]});
-      if(out.length>80)return out}}
+      const j=b.jobs[k],r=b.workers[k],idleV={x:ax+(k-1)*9,y:ay+4,dir:0,f:0,r};
+      if(!j||(S.season===2&&!b.warm)){out.push(idleV);continue}
+      if(j.trip!=null&&st){const sx=(st.x+st.w/2+(k-1)*.4)*TS,sy=(st.y+st.h)*TS+4,u=Math.min(1,j.trip/j.tt),go=u<.5,v=go?u*2:2-u*2;
+        const carry=d.kind==='make'?!go:go;out.push({x:ax+(sx-ax)*v,y:ay+(sy-ay)*v,dir:go?dirOf(sx-ax,sy-ay):dirOf(ax-sx,ay-sy),f:an,r,carry});continue}
+      let tx=null,ty=null;
+      if(d.kind==='cut'&&j.tg>=0){tx=(j.tg%MW+.5)*TS;ty=(((j.tg/MW)|0)+1)*TS}
+      else if(d.kind==='gather'&&j.tg>=0){const n=S.nodes[j.tg];if(n){tx=(n.x+.5)*TS;ty=(n.y+1)*TS+2}}
+      if(tx==null){out.push(idleV);continue}
+      const u=Math.min(1,j.p/1.5);out.push({x:ax+(tx-ax)*u,y:ay+(ty-ay)*u,dir:u<1?dirOf(tx-ax,ty-ay):0,f:u<1?an:(Math.floor(t*3)%2?1:3),r,carry:false});
+      if(out.length>90)return out}}
   return out;
 }
-function drawWalker(v){const sh=ART.vr[v.r]||ART.vh;ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(v.x,v.y,6,2.4,0,0,7);ctx.fill();ctx.drawImage(sh,v.f*128,v.dir*128,128,128,v.x-16,v.y-30.25,32,32)}
+function drawWalker(v){const sh=ART.vr[v.r]||ART.vh;ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(v.x,v.y,6,2.4,0,0,7);ctx.fill();ctx.drawImage(sh,v.f*128,v.dir*128,128,128,v.x-16,v.y-30.25,32,32);if(v.carry){ctx.fillStyle='#8a6a40';ctx.fillRect(v.x-4,v.y-21,8,6);ctx.fillStyle='#b48a56';ctx.fillRect(v.x-4,v.y-21,8,2)}}
 /* ---------- particles & floating text ---------- */
 const FX=[];
 function popText(x,y,txt,col){if(FX.length>420)return;FX.push({k:'t',x:x+(Math.random()-.5)*8,y,txt,col,a:0,life:1.4})}
@@ -1104,7 +1139,10 @@ function ghostBar(){
   if(g.type==='road'){setHTML(el,`<div class="gt"><b>Paint roads</b><small>Drag along cleared ground, 1 wood a tile. Two fingers to pan.</small></div><button class="btn main" data-act="gno">Done</button>`);return}
   const why=canPlace(g.type,g.x,g.y);let soft='';
   if(!why&&d.kind==='cut'&&findTree({type:g.type,x:g.x,y:g.y,w:d.w,h:d.h})<0)soft='No forest edge within 8 tiles. Move it closer to the trees.';
-  let reach='';if(d.nodes){const o=reachInfo({type:g.type,x:g.x,y:g.y,w:d.w,h:d.h});const ks=Object.keys(o);if(!why&&!ks.length)soft='Nothing to harvest in reach. Move it toward a glowing node.';else reach=' In reach: '+ks.map(k=>o[k]+' '+G[k][0].toLowerCase()).join(', ')+'.'}
+  let reach='';
+  if(d.recipes)reach+=' Makes '+d.recipes.map(k=>RC[k].n.toLowerCase()).join(', ')+'.';
+  if(d.wk){const stores=S.buildings.filter(x=>x.type==='store'&&x.built);const c={x:g.x+d.w/2,y:g.y+d.h/2};const dd=Math.min(...stores.map(st=>{const sc=bc(st);return Math.abs(c.x-sc.x)+Math.abs(c.y-sc.y)}));reach+=` Storehouse ${Math.round(dd)} tiles away.`}
+  if(d.nodes){const o=reachInfo({type:g.type,x:g.x,y:g.y,w:d.w,h:d.h});const ks=Object.keys(o);if(!why&&!ks.length)soft='Nothing to harvest in reach. Move it toward a glowing node.';else reach=' In reach: '+ks.map(k=>o[k]+' '+G[k][0].toLowerCase()).join(', ')+'.'}
   setHTML(el,`<div class="gt"><b>${d.n}</b><small class="${why||soft?'bad':''}">${why?esc(why):soft||'Cost: '+costStr(d.cost)+'.'+reach+' Tap or drag to move.'}</small></div><button class="btn" data-act="gno">Cancel</button><button class="btn main" data-act="gok" ${why?'disabled':''}>Build</button>`);
 }
 function showPick(){
@@ -1118,7 +1156,7 @@ function showPick(){
   const title=q.k==='bp'?'Choose a blueprint':'Choose a Charter';
   const sub=q.k==='bp'?'The Crown\u2019s architects send three plans. Keep one; you can build it as often as you like.':`Year ${S.year}. The Crown grants a Charter, a lasting privilege for this settlement. Choose one.`;
   el.innerHTML=`<div class="wrap"><h2>${title}</h2><p class="sub">${sub}</p><div class="cards">`+opts.map((k,i)=>{
-    if(q.k==='bp'){const d=BD[k];return`<button class="dcard" data-act="pk:${i}"><span class="k">${d.beds?'Housing':d.kind?'Production':'Special'}</span><b>${d.n}</b><p>${d.desc}</p><small>Costs ${costStr(d.cost)}</small></button>`}
+    if(q.k==='bp'){const d=BD[k];return`<button class="dcard" data-act="pk:${i}"><span class="k">${d.beds?'Housing':d.kind?'Production':'Special'}</span><b>${d.n}</b><p>${d.desc}</p>${d.recipes?d.recipes.map(r=>recipeHTML(RC[r],false)).join(''):''}<small>Costs ${costStr(d.cost)}</small></button>`}
     const c=CHR[k];return`<button class="dcard" data-act="pk:${i}"><span class="k ${c.r}">${c.r}</span><b>${c.n}</b><p>${c.d}</p>${c.down?`<small class="down">${c.down}</small>`:''}</button>`}).join('')+'</div></div>';
 }
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -1157,8 +1195,9 @@ function pBuilding(b){
       else h+='<div class="slot empty">'+RACES.map((RR,k)=>{const n=idle(k);return`<button data-act="as:${b.id}:${k}" ${n>0?'':'disabled'} style="--c:${RR.c}">${RR.one} <small>${Math.max(0,n)}</small></button>`}).join('')+'</div>'}
     h+='</div>';
   }
-  if(d.recipes){h+='<h3>Recipe</h3><div class="recipes">'+d.recipes.map(k=>{const rc=RC[k];const ins=rc.in.map(s=>s.map(g=>`${G[g][0]} (${Math.floor(S.stock[g])})`).join(' or ')).join(' + ');
-    return`<button class="rec ${b.recipe===k?'on':''}" data-act="rec:${b.id}:${k}"><b>${rc.n} <span class="stars">${'★'.repeat(rc.st)}${'☆'.repeat(3-rc.st)}</span></b><small>${ins} → ${STAR_OUT[rc.st]} every 20 s per worker</small></button>`}).join('')+'</div>'}
+  if(d.recipes){h+='<h3>Recipe <small>tap to switch</small></h3><div class="recipes">'+d.recipes.map(k=>{const rc=RC[k];
+    return`<button class="rec ${b.recipe===k?'on':''}" data-act="rec:${b.id}:${k}"><b>${rc.n} <span class="stars">${'★'.repeat(rc.st)}${'☆'.repeat(3-rc.st)}</span></b>${recipeHTML(rc,true)}<small>Each worker: 1 of each input → ${STAR_OUT[rc.st]} ${rc.n.toLowerCase()} every 20 s, plus the trip to fetch the inputs.</small></button>`}).join('')+'</div><p class="note">Numbers show what the Storehouse holds now. A dashed ring means any one of those will do.</p>'}
+  if(d.wk&&b.built){const tt=tripTime(b);h+=`<h3>Logistics</h3><div class="trip"><span>Nearest Storehouse</span><b>${Math.round(b.dist)} tiles</b><span>Road link</span><b>${b.conn?'Yes':'No, trips take twice as long'}</b><span>Round trip</span><b>${tt.toFixed(1)} s</b></div><p class="note">${d.kind==='make'?'Workers walk to the Storehouse for every batch of ingredients.':'Workers carry what they gather back to the Storehouse before going out again.'} Build closer to a Storehouse, or link it by road, to waste less time walking.</p>`}
   if(d.beds)h+=`<p class="stat">${d.beds} beds ${d.race!=null?'for '+RACES[d.race].n:'for any race'}</p>`;
   if(d.kind==='cut')h+=`<p class="note">Trees felled this year: ${S.trees}, adding ${(S.trees*0.05).toFixed(1)} Ire. The count resets each Mistfall.</p>`;
   if(d.kind==='gather'){const c=bc(b);const ns=S.nodes.filter(n=>n.c>0&&d.nodes.includes(n.t)&&Math.max(Math.abs(n.x+.5-c.x),Math.abs(n.y+.5-c.y))<=d.range&&(S.glade[idx(n.x,n.y)]<0||S.glades[S.glade[idx(n.x,n.y)]].open));
@@ -1214,7 +1253,7 @@ function pRenown(){
 }
 function pStore(){
   const tr2=S.haul.reduce((a,h)=>a+h.a,0);
-  let h=head('Storehouse','Everything you hold')+'<div class="goods">'+Object.keys(G).map(g=>`<div class="r"><i style="background:${GC[g]}"></i><b>${Math.floor(S.stock[g])}</b><span>${G[g][0]}</span></div>`).join('')+'</div>';
+  let h=head('Storehouse','Everything you hold')+'<table class="tbl gtbl">'+Object.keys(G).map(g=>`<tr><td>${gchip(g)}<small>From ${(MADE_BY[g]||['caches and events']).filter((v,i,a)=>a.indexOf(v)===i).join(', ')}</small><small>For ${(USED_IN[g]||['nothing yet']).filter((v,i,a)=>a.indexOf(v)===i).slice(0,4).join(', ')}</small></td><td>${Math.floor(S.stock[g])}</td></tr>`).join('')+'</table>';
   h+=`<p class="note">${tr2} goods in transit with the haulers. Roads to a Storehouse cut hauling time.</p>`;
   return h;
 }
@@ -1272,6 +1311,7 @@ function act(a,p1,p2){
     case 'gno':exitGhost();break;
     case 'speed':ui.speed=+p1;break;
     case 'race':openPanel('race',+p1);break;
+    case 'open':openPanel('b',+p1);break;
     case 'ire':case 'year':case 'renown':case 'store':case 'menu':openPanel(a);break;
     case 'close':closePanel();break;
     case 'as':{const b=byId(+p1),r=+p2;if(b&&idle(r)>0&&b.workers.length<BD[b.type].wk){b.workers.push(r);b.jobs.push(null)}break}
@@ -1340,7 +1380,7 @@ window.__lr={get S(){return S},ui,tick,newGame,startNew,act,recompute,canPlace,p
 <div id="updBar" class="glass" hidden style="position:fixed;z-index:20;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;gap:12px;align-items:center;padding:10px 12px 10px 16px;max-width:calc(100% - 32px)"><span>A new version of The Long Rain is ready.</span><button class="btn main" onclick="try{window.__lr&&window.__lr.S&&window.__lr.save&&window.__lr.save()}catch(e){};location.reload()">Update now</button></div>
 <div id="installHint" class="ov" hidden><div class="card glass"><h1 style="font-size:34px">Install on your iPad</h1><p class="lede">Tap the Share button in Safari, then <b>Add to Home Screen</b>. The Long Rain then opens full screen and works offline.</p><div class="row"><button class="btn main" id="hintOk">Got it</button></div></div></div>
 <script>
-const LR_VERSION='M1.6';
+const LR_VERSION='M1.7';
 if('serviceWorker' in navigator){addEventListener('load',()=>{
   navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{
     const check=()=>r.update().catch(()=>{});check();
